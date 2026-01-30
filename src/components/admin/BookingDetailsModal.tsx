@@ -1,0 +1,152 @@
+"use client";
+
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Booking } from "@/types";
+import { format } from "date-fns";
+import { Calendar, Clock, CreditCard, MapPin, Phone, User, Wrench } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+interface BookingDetailsModalProps {
+    booking: Booking | null;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+}
+
+export function BookingDetailsModal({ booking, open, onOpenChange }: BookingDetailsModalProps) {
+    if (!booking) return null;
+
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case 'pending': return 'bg-amber-100 text-amber-700 border-amber-200';
+            case 'accepted': return 'bg-blue-100 text-blue-700 border-blue-200';
+            case 'in_progress': return 'bg-indigo-100 text-indigo-700 border-indigo-200';
+            case 'completed': return 'bg-green-100 text-green-700 border-green-200';
+            case 'cancelled': return 'bg-red-100 text-red-700 border-red-200';
+            default: return 'bg-slate-100 text-slate-700 border-slate-200';
+        }
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle className="text-2xl">Booking Details</DialogTitle>
+                </DialogHeader>
+
+                <div className="space-y-6 pt-4">
+                    {/* Status Badge */}
+                    <div className="flex items-center justify-between">
+                        <span className={`px-4 py-2 rounded-full text-sm font-bold uppercase border ${getStatusColor(booking.status)}`}>
+                            {booking.status}
+                        </span>
+                        <span className="text-sm text-slate-500">
+                            ID: {booking.id.slice(-8)}
+                        </span>
+                    </div>
+
+                    {/* Service Information */}
+                    <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-6 rounded-xl border border-blue-100">
+                        <div className="flex items-start gap-4">
+                            <div className="p-3 bg-white rounded-lg shadow-sm">
+                                <Wrench className="h-6 w-6 text-blue-600" />
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="font-bold text-lg text-slate-900">{booking.serviceName}</h3>
+                                <p className="text-sm text-slate-600 mt-1">Service ID: {booking.serviceId.slice(-8)}</p>
+                                <div className="mt-3 flex items-center gap-2">
+                                    <span className="text-2xl font-bold text-blue-600">₹{booking.servicePrice}</span>
+                                    <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${booking.paymentStatus === 'paid'
+                                        ? 'bg-green-100 text-green-700'
+                                        : 'bg-amber-100 text-amber-700'
+                                        }`}>
+                                        {booking.paymentStatus}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Customer Information */}
+                    <div className="space-y-3">
+                        <h4 className="font-bold text-slate-900">Customer Information</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                                <User className="h-5 w-5 text-slate-400" />
+                                <div>
+                                    <p className="text-xs text-slate-500">Customer ID</p>
+                                    <p className="font-medium text-slate-900">{booking.customerId.slice(-8)}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Booking Details */}
+                    <div className="space-y-3">
+                        <h4 className="font-bold text-slate-900">Booking Details</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                                <Calendar className="h-5 w-5 text-slate-400" />
+                                <div>
+                                    <p className="text-xs text-slate-500">Scheduled Time</p>
+                                    <p className="font-medium text-slate-900">
+                                        {format(booking.scheduledTime.toDate(), "MMM dd, yyyy hh:mm a")}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                                <CreditCard className="h-5 w-5 text-slate-400" />
+                                <div>
+                                    <p className="text-xs text-slate-500">Payment Method</p>
+                                    <p className="font-medium text-slate-900">{booking.paymentMethod}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                                <MapPin className="h-5 w-5 text-slate-400" />
+                                <div>
+                                    <p className="text-xs text-slate-500">Created</p>
+                                    <p className="font-medium text-slate-900">
+                                        {booking.createdAt ? format(booking.createdAt.toDate(), "MMM dd, hh:mm a") : "Just now"}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Location */}
+                    <div className="space-y-2">
+                        <h4 className="font-bold text-slate-900">Service Location</h4>
+                        <div className="p-4 bg-slate-50 rounded-lg">
+                            <p className="text-slate-700">
+                                {booking.location.street}, {booking.location.city} - {booking.location.zipCode}
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Warranty Info */}
+                    {booking.warrantyValidUntil && (
+                        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                            <p className="text-sm font-medium text-green-900">
+                                Warranty valid until: {format(booking.warrantyValidUntil.toDate(), "MMM dd, yyyy")}
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex gap-3 pt-4 border-t">
+                        <Button className="flex-1 bg-blue-600 hover:bg-blue-700">
+                            Update Status
+                        </Button>
+                        <Button variant="outline" className="flex-1">
+                            Contact Customer
+                        </Button>
+                    </div>
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+}

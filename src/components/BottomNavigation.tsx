@@ -14,6 +14,8 @@ export function BottomNavigation() {
         { href: "/history", icon: ClipboardList, label: "History" },
     ]
 
+    // We can't easily use hooks here if we want to add more, but let's keep it simple for now and just improve the Book Now button.
+
     return (
         <nav className="fixed bottom-6 left-0 right-0 z-50 px-6">
             <div className="max-w-md mx-auto bg-[#1a36a4] rounded-[32px] shadow-2xl">

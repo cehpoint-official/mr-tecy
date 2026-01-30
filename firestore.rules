@@ -1,0 +1,57 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      // Check if the user document has role 'admin'
+      return get(/databases/$(database)/documents/user/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // User Collection
+    match /user/{userId} {
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      // Allow create during sign up, usually handled by client or trigger
+      allow create: if isAuthenticated() && isOwner(userId);
+      allow update: if isAuthenticated() && (isOwner(userId) || isAdmin());
+    }
+
+    // Partners Collection (Managed resources)
+    match /partners/{partnerId} {
+      allow read: if true; // Public can see partner profiles to book them
+      allow write: if isAuthenticated() && isAdmin(); // Only admins manage partners
+    }
+
+    // Services Collection (Catalog)
+    match /services/{serviceId} {
+      allow read: if true;
+      allow write: if isAuthenticated() && isAdmin();
+    }
+
+    // Bookings Collection
+    match /bookings/{bookingId} {
+      allow create: if isAuthenticated();
+      // Customer can read their own bookings, Admins see all
+      allow read: if isAuthenticated() && (
+        resource.data.customerId == request.auth.uid || 
+        isAdmin()
+      );
+      // Validations can be added here (e.g., cannot change amount)
+      allow update: if isAuthenticated() && isAdmin();
+    }
+    
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

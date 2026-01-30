@@ -1,6 +1,7 @@
 "use client";
 
-import { Bell, Menu, Wrench, LogOut, User } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Bell, Menu, Wrench, LogOut, User, LayoutDashboard, Search } from "lucide-react"
 import { SearchBar } from "@/components/SearchBar"
 import { CategoryCard } from "@/components/CategoryCard"
 import { ServiceCard } from "@/components/ServiceCard"
@@ -17,9 +18,28 @@ import {
 import { useAuth } from "@/context/AuthContext"
 import Link from "next/link"
 import { authService } from "@/services/auth.service"
+import { serviceService } from "@/services/service.service"
+import { Service } from "@/types"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function HomePage() {
-  const { user, loading } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
+  const [services, setServices] = useState<Service[]>([]);
+  const [loadingServices, setLoadingServices] = useState(true);
+
+  useEffect(() => {
+    async function fetchServices() {
+      try {
+        const data = await serviceService.getServices();
+        setServices(data);
+      } catch (error) {
+        console.error("Error fetching services:", error);
+      } finally {
+        setLoadingServices(false);
+      }
+    }
+    fetchServices();
+  }, []);
 
   const handleLogout = async () => {
     await authService.logout();
@@ -39,20 +59,28 @@ export default function HomePage() {
                 <Menu className="w-6 h-6" strokeWidth={2} />
               </Button>
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center transform rotate-3">
+                <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center transform rotate-3 shadow-sm">
                   <div className="w-4 h-4 bg-white transform rotate-45"></div>
                 </div>
                 <h1 className="text-xl font-bold text-slate-950 tracking-tight">Mr tecy</h1>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              {!loading && (
+            <div className="flex items-center gap-2">
+              {profile?.role === 'admin' && (
+                <Link href="/admin">
+                  <Button variant="outline" size="sm" className="h-9 border-blue-200 text-blue-700 font-extrabold bg-blue-50/50 hover:bg-blue-100 rounded-full px-4 flex items-center gap-1.5 shadow-sm">
+                    <LayoutDashboard className="w-4 h-4" />
+                    ADMIN
+                  </Button>
+                </Link>
+              )}
+              {!authLoading && (
                 user ? (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0 border-2 border-white shadow-sm overflow-hidden">
+                      <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0 border-2 border-white shadow-sm overflow-hidden ring-2 ring-blue-100 ring-offset-2 ml-1">
                         <img
-                          src={user.photoURL || "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80"}
+                          src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile?.displayName || user.displayName || "User")}&background=0D8ABC&color=fff`}
                           alt="Profile"
                           className="w-full h-full object-cover"
                         />
@@ -61,18 +89,31 @@ export default function HomePage() {
                     <DropdownMenuContent className="w-56" align="end" forceMount>
                       <DropdownMenuLabel className="font-normal">
                         <div className="flex flex-col space-y-1">
-                          <p className="text-sm font-medium leading-none">My Account</p>
+                          <p className="text-sm font-bold leading-none">{profile?.displayName || user.displayName || "User"}</p>
                           <p className="text-xs leading-none text-muted-foreground text-slate-500">
                             {user.email}
                           </p>
+                          {profile?.role === 'admin' && (
+                            <span className="text-[10px] items-center bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full font-bold w-fit mt-1 uppercase">
+                              Admin Account
+                            </span>
+                          )}
                         </div>
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem>
+                      {profile?.role === 'admin' && (
+                        <Link href="/admin">
+                          <DropdownMenuItem className="cursor-pointer font-bold text-blue-600">
+                            <LayoutDashboard className="mr-2 h-4 w-4" />
+                            <span>Admin Dashboard</span>
+                          </DropdownMenuItem>
+                        </Link>
+                      )}
+                      <DropdownMenuItem className="cursor-pointer">
                         <User className="mr-2 h-4 w-4" />
                         <span>Profile</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600 focus:bg-red-50">
+                      <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer">
                         <LogOut className="mr-2 h-4 w-4" />
                         <span>Log out</span>
                       </DropdownMenuItem>
@@ -80,7 +121,7 @@ export default function HomePage() {
                   </DropdownMenu>
                 ) : (
                   <Link href="/login">
-                    <Button className="bg-blue-600 hover:bg-blue-700 text-white h-9 px-4 rounded-full text-sm font-medium shadow-sm transition-colors">
+                    <Button className="bg-blue-600 hover:bg-blue-700 text-white h-9 px-4 rounded-full text-sm font-bold shadow-md transition-all active:scale-95">
                       Login
                     </Button>
                   </Link>
@@ -89,18 +130,16 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Search Bar moved to Header */}
           <SearchBar />
         </div>
       </header>
 
 
-      {/* Main Content */}
-      <main className="max-w-md mx-auto px-4 pt-6 pb-5 space-y-6 relative z-10">
+      <main className="max-w-md mx-auto px-4 pt-6 pb-5 space-y-8 relative z-10">
 
         {/* Categories Section */}
         <section>
-          <h2 className="text-sm font-bold text-blue-600 mb-3 ml-1">
+          <h2 className="text-sm font-bold text-blue-600 mb-4 ml-1 tracking-tight">
             Appliances & Electronic
           </h2>
           <div className="grid grid-cols-4 gap-3">
@@ -126,72 +165,94 @@ export default function HomePage() {
 
         {/* Promotional Banner */}
         <section>
-          <div className="relative h-40 rounded-2xl overflow-hidden shadow-md">
-            {/* Professional mechanic background image */}
+          <div className="relative h-44 rounded-2xl overflow-hidden shadow-xl group cursor-pointer transition-transform duration-300 hover:scale-[1.02]">
             <img
               src="https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=800&auto=format&fit=crop&q=80"
               alt="Professional mechanic at work"
-              className="absolute inset-0 w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-900/90 to-blue-700/70 z-10"></div>
-            <div className="absolute inset-0 z-20 flex items-center px-6">
-              <div className="max-w-[60%]">
-                <h3 className="text-xl font-bold text-white mb-2 leading-tight">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-900/95 via-blue-800/80 to-transparent z-10"></div>
+            <div className="absolute inset-0 z-20 flex items-center px-8">
+              <div className="max-w-[70%] space-y-2">
+                <h3 className="text-2xl font-bold text-white leading-tight drop-shadow-sm">
                   Get your car fixed at home
                 </h3>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="bg-white text-blue-600 hover:bg-slate-50 font-semibold shadow-md text-xs h-9"
-                >
-                  Book a Mechanic →
-                </Button>
+                <p className="text-blue-100 text-sm font-medium opacity-90">Expert mechanics available in 30 mins</p>
+                <div className="pt-2">
+                  <Button
+                    variant="secondary"
+                    className="bg-white text-blue-600 hover:bg-slate-50 font-bold shadow-lg text-xs h-10 px-6 rounded-full transition-all group-hover:pr-8"
+                  >
+                    Book a Mechanic →
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Recommended Section */}
+        {/* Recommended Section (DYNAMIC) */}
         <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xs font-bold tracking-wider text-slate-400 uppercase">
+          <div className="flex items-center justify-between mb-4 px-1">
+            <h2 className="text-[11px] font-bold tracking-[0.2em] text-slate-400 uppercase">
               Recommended Services
             </h2>
-            <button className="text-sm text-blue-600 font-medium hover:text-blue-700">
+            <button className="text-sm text-blue-600 font-bold hover:text-blue-700 transition-colors">
               View All
             </button>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <ServiceCard
-              title="Smart TV Repair"
-              description="Expert technicians for all TV brands and models"
-              image="https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=400&auto=format&fit=crop&q=80"
-              price="₹299"
-            />
-            <ServiceCard
-              title="Washing Machine"
-              description="Professional repair for automatic and manual machines"
-              image="https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?w=400&auto=format&fit=crop&q=80"
-              price="₹199"
-            />
-            <ServiceCard
-              title="AC Service"
-              description="Complete servicing and maintenance for all AC types"
-              image="https://images.unsplash.com/photo-1585366119957-e9730b6d0f60?w=400&auto=format&fit=crop&q=80"
-              price="₹399"
-              badge="Popular"
-            />
-            <ServiceCard
-              title="Refrigerator Repair"
-              description="Fast and reliable fridge repair services"
-              image="https://images.unsplash.com/photo-1571175443880-49e1d25b2bc5?w=400&auto=format&fit=crop&q=80"
-              price="₹349"
-            />
+
+          <div className="grid grid-cols-2 gap-4">
+            {loadingServices ? (
+              [1, 2, 3, 4].map((i) => (
+                <div key={i} className="space-y-3">
+                  <Skeleton className="h-28 w-full rounded-2xl" />
+                  <Skeleton className="h-4 w-3/4 rounded-full" />
+                  <Skeleton className="h-4 w-1/2 rounded-full" />
+                </div>
+              ))
+            ) : services.length > 0 ? (
+              services.map((service) => (
+                <Link key={service.id} href={`/booking/${service.id}`}>
+                  <ServiceCard
+                    title={service.name}
+                    description={service.description}
+                    image={service.iconUrl || `https://source.unsplash.com/400x300/?${service.category.toLowerCase()}`}
+                    price={`₹${service.price}`}
+                  />
+                </Link>
+              ))
+            ) : (
+              <div className="col-span-2 text-center py-16 bg-white rounded-3xl border-2 border-dashed border-slate-100 p-8 shadow-sm">
+                <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Wrench className="w-8 h-8 text-blue-300" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 mb-1">No services yet</h3>
+                <p className="text-slate-500 text-sm max-w-[200px] mx-auto leading-relaxed">
+                  {profile?.role === 'admin'
+                    ? "Welcome Admin! Start by adding automotive or appliance services."
+                    : "We're setting up our services. Please check back soon!"}
+                </p>
+                {profile?.role === 'admin' ? (
+                  <Link href="/admin/services">
+                    <Button className="mt-6 bg-blue-600 hover:bg-blue-700 font-extrabold text-sm px-8 rounded-full shadow-lg shadow-blue-100 transition-all active:scale-95">
+                      Add First Service
+                    </Button>
+                  </Link>
+                ) : !profile && (
+                  <div className="mt-6 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Developer Tip</p>
+                    <p className="text-xs text-slate-600 font-medium leading-normal">
+                      Set your role to <span className="text-blue-600 font-bold">"admin"</span> in Firestore to access the management tools.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </section>
       </main>
 
-      {/* Bottom Navigation */}
       <BottomNavigation />
     </div>
   )
