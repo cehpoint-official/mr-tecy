@@ -5,6 +5,7 @@ import {
     signOut,
     updateProfile,
     sendEmailVerification,
+    sendPasswordResetEmail,
     User
 } from "firebase/auth";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -89,6 +90,16 @@ export const authService = {
             await signOut(auth);
         } catch (error) {
             console.error("Logout error", error);
+            throw error;
+        }
+    },
+
+    // Reset Password
+    async resetPassword(email: string) {
+        try {
+            await sendPasswordResetEmail(auth, email);
+        } catch (error) {
+            console.error("Reset password error", error);
             throw error;
         }
     }
