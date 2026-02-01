@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { bookingService } from "@/services/booking.service";
-import { uploadService } from "@/services/upload.service";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ChevronLeft, Loader2, Clock, MapPin, CreditCard, Calendar as CalendarIcon } from "lucide-react";

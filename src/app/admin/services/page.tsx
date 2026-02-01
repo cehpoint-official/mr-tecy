@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/select";
 import { Plus, Pencil, Trash2, Loader2, TrendingUp, TrendingDown, Image as ImageIcon, X } from "lucide-react";
 import { createServiceAction, updateServiceAction } from "@/actions/service.actions";
-import { uploadService } from "@/services/upload.service";
+import { cloudinaryUploadService } from "@/services/cloudinary-upload.service";
 import { Service, ServiceCategory } from "@/types";
 import { useRealtimeServices } from "@/hooks/useRealtimeServices";
 import { RealtimeIndicator } from "@/components/admin/RealtimeIndicator";
@@ -109,9 +109,10 @@ export default function ServicesPage() {
             // Upload image if a new file is selected
             if (imageFile) {
                 console.log("[ServicesPage] New image selected. Starting upload...");
-                // Upload directly to Firebase Storage (Client-side)
+                // Upload directly to Cloudinary
                 try {
-                    iconUrl = await uploadService.uploadImage(imageFile, "services");
+                    const result = await cloudinaryUploadService.uploadImage(imageFile, "services");
+                    iconUrl = result.url;
                     console.log("[ServicesPage] Image uploaded successfully. URL:", iconUrl);
                 } catch (uploadError: any) {
                     console.error("[ServicesPage] Upload failed:", uploadError);
