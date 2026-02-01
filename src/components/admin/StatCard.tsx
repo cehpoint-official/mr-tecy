@@ -47,25 +47,25 @@ export function StatCard({ title, value, icon: Icon, color, trend, loading }: St
         : displayValue.toLocaleString();
 
     return (
-        <Card className="border-none shadow-sm hover:shadow-md transition-all duration-300 group">
+        <Card className="border-none shadow-md hover:shadow-xl transition-all duration-300 group bg-white/90 backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                <CardTitle className="text-sm font-medium text-slate-500">{title}</CardTitle>
-                <div className={`p-2 rounded-lg bg-gradient-to-br ${color} group-hover:scale-110 transition-transform duration-300`}>
-                    <Icon className="h-4 w-4 text-white" />
+                <CardTitle className="text-xs sm:text-sm font-bold text-slate-500 uppercase tracking-wide">{title}</CardTitle>
+                <div className={`p-2 sm:p-2.5 rounded-xl bg-gradient-to-br ${color} group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 shadow-lg`}>
+                    <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                 </div>
             </CardHeader>
             <CardContent>
                 <div className="space-y-1">
                     {loading ? (
-                        <div className="h-8 w-24 bg-slate-200 animate-pulse rounded" />
+                        <div className="h-8 w-24 bg-slate-200 animate-pulse rounded-lg" />
                     ) : (
-                        <div className="text-2xl font-bold text-slate-900">
+                        <div className="text-2xl sm:text-3xl font-extrabold text-slate-900">
                             {typeof value === 'string' && value.includes('₹') ? formattedValue : value}
                         </div>
                     )}
                     {trend && !loading && (
                         <div className="flex items-center gap-1 text-xs">
-                            <span className={trend.isPositive ? "text-green-600" : "text-red-600"}>
+                            <span className={`font-bold ${trend.isPositive ? "text-green-600" : "text-red-600"}`}>
                                 {trend.isPositive ? "↑" : "↓"} {Math.abs(trend.value)}%
                             </span>
                             <span className="text-slate-500">vs last month</span>

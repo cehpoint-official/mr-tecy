@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react"
-import { Bell, Menu, Wrench, LogOut, User, LayoutDashboard, Search } from "lucide-react"
+import { Wrench, LogOut, User, LayoutDashboard, Search } from "lucide-react"
 import { SearchBar } from "@/components/SearchBar"
 import { CategoryCard } from "@/components/CategoryCard"
 import { ServiceCard } from "@/components/ServiceCard"
@@ -26,12 +26,15 @@ export default function HomePage() {
   const { user, profile, loading: authLoading } = useAuth();
   const [services, setServices] = useState<Service[]>([]);
   const [loadingServices, setLoadingServices] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredServices, setFilteredServices] = useState<Service[]>([]);
 
   useEffect(() => {
     async function fetchServices() {
       try {
         const data = await serviceService.getServices();
         setServices(data);
+        setFilteredServices(data);
       } catch (error) {
         console.error("Error fetching services:", error);
       } finally {
@@ -40,6 +43,23 @@ export default function HomePage() {
     }
     fetchServices();
   }, []);
+
+  // Filter services when search query changes
+  useEffect(() => {
+    if (searchQuery.trim() === "") {
+      setFilteredServices(services);
+    } else {
+      const lowerQuery = searchQuery.toLowerCase();
+      const filtered = services.filter(
+        (service) =>
+          service.name.toLowerCase().includes(lowerQuery) ||
+          service.description.toLowerCase().includes(lowerQuery) ||
+          service.category.toLowerCase().includes(lowerQuery)
+      );
+      setFilteredServices(filtered);
+    }
+  }, [searchQuery, services]);
+
 
   const handleLogout = async () => {
     await authService.logout();
@@ -54,16 +74,11 @@ export default function HomePage() {
       <header className="px-4 pt-3 pb-0 relative">
         <div className="max-w-md mx-auto space-y-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" className="text-slate-700 hover:text-blue-600 -ml-2">
-                <Menu className="w-6 h-6" strokeWidth={2} />
-              </Button>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center transform rotate-3 shadow-sm">
-                  <div className="w-4 h-4 bg-white transform rotate-45"></div>
-                </div>
-                <h1 className="text-xl font-bold text-slate-950 tracking-tight">Mr tecy</h1>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center transform rotate-3 shadow-sm">
+                <div className="w-4 h-4 bg-white transform rotate-45"></div>
               </div>
+              <h1 className="text-xl font-bold text-slate-950 tracking-tight">Mr tecy</h1>
             </div>
             <div className="flex items-center gap-2">
               {profile?.role === 'admin' && (
@@ -80,7 +95,7 @@ export default function HomePage() {
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0 border-2 border-white shadow-sm overflow-hidden ring-2 ring-blue-100 ring-offset-2 ml-1">
                         <img
-                          src={user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile?.displayName || user.displayName || "User")}&background=0D8ABC&color=fff`}
+                          src={profile?.photoURL || user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(profile?.displayName || user.displayName || "User")}&background=0D8ABC&color=fff`}
                           alt="Profile"
                           className="w-full h-full object-cover"
                         />
@@ -109,10 +124,12 @@ export default function HomePage() {
                           </DropdownMenuItem>
                         </Link>
                       )}
-                      <DropdownMenuItem className="cursor-pointer">
-                        <User className="mr-2 h-4 w-4" />
-                        <span>Profile</span>
-                      </DropdownMenuItem>
+                      <Link href="/profile">
+                        <DropdownMenuItem className="cursor-pointer">
+                          <User className="mr-2 h-4 w-4" />
+                          <span>Profile</span>
+                        </DropdownMenuItem>
+                      </Link>
                       <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer">
                         <LogOut className="mr-2 h-4 w-4" />
                         <span>Log out</span>
@@ -130,127 +147,167 @@ export default function HomePage() {
             </div>
           </div>
 
-          <SearchBar />
+          <SearchBar
+            value={searchQuery}
+            onChange={setSearchQuery}
+            onClear={() => setSearchQuery("")}
+          />
         </div>
       </header>
 
 
       <main className="max-w-md mx-auto px-4 pt-6 pb-5 space-y-8 relative z-10">
 
-        {/* Categories Section */}
-        <section>
-          <h2 className="text-sm font-bold text-blue-600 mb-4 ml-1 tracking-tight">
-            Appliances & Electronic
-          </h2>
-          <div className="grid grid-cols-4 gap-3">
-            <CategoryCard
-              image="https://images.unsplash.com/photo-1603386329225-868f9b1ee6c9?w=400&auto=format&fit=crop&q=80"
-              label="Car"
-            />
-            <CategoryCard
-              image="https://images.unsplash.com/photo-1558981852-426c6c22a060?w=400&auto=format&fit=crop&q=80"
-              label="Bike"
-            />
-            <CategoryCard
-              image="https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=400&auto=format&fit=crop&q=80"
-              label="Electrician"
-            />
-            <CategoryCard
-              image="https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=400&auto=format&fit=crop&q=80"
-              label="Mobile"
-            />
-          </div>
-        </section>
+        {/* Search Results Display */}
+        {searchQuery ? (
+          <section>
+            <div className="flex items-center justify-between mb-4 px-1">
+              <h2 className="text-[11px] font-bold tracking-[0.2em] text-slate-400 uppercase">
+                {filteredServices.length} Results Found
+              </h2>
+            </div>
+            {filteredServices.length > 0 ? (
+              <div className="grid grid-cols-2 gap-4">
+                {filteredServices.map((service) => (
+                  <Link key={service.id} href={`/booking/${service.id}`}>
+                    <ServiceCard
+                      title={service.name}
+                      description={service.description}
+                      image={service.iconUrl || `https://source.unsplash.com/400x300/?${service.category.toLowerCase()}`}
+                      price={`₹${service.price}`}
+                    />
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-slate-500 font-medium">No services match your search.</p>
+              </div>
+            )}
+          </section>
+        ) : (
+          <>
+            {/* Categories Section */}
+            <section>
+              <h2 className="text-sm font-bold text-blue-600 mb-4 ml-1 tracking-tight">
+                Service Categories
+              </h2>
+              <div className="grid grid-cols-4 gap-3">
+                <CategoryCard
+                  image="https://images.unsplash.com/photo-1603386329225-868f9b1ee6c9?w=400&auto=format&fit=crop&q=80"
+                  label="Vehicle"
+                  category="Vehicle"
+                />
+                <CategoryCard
+                  image="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&auto=format&fit=crop&q=80"
+                  label="Appliance"
+                  category="Appliance"
+                />
+                <CategoryCard
+                  image="https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=400&auto=format&fit=crop&q=80"
+                  label="Electronics"
+                  category="Electronics"
+                />
+                <CategoryCard
+                  image="https://images.unsplash.com/photo-1607472586893-edb57bdc0e39?w=400&auto=format&fit=crop&q=80"
+                  label="Plumbing"
+                  category="Plumbing"
+                />
+              </div>
+            </section>
 
-
-        {/* Promotional Banner */}
-        <section>
-          <div className="relative h-44 rounded-2xl overflow-hidden shadow-xl group cursor-pointer transition-transform duration-300 hover:scale-[1.02]">
-            <img
-              src="https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=800&auto=format&fit=crop&q=80"
-              alt="Professional mechanic at work"
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-900/95 via-blue-800/80 to-transparent z-10"></div>
-            <div className="absolute inset-0 z-20 flex items-center px-8">
-              <div className="max-w-[70%] space-y-2">
-                <h3 className="text-2xl font-bold text-white leading-tight drop-shadow-sm">
-                  Get your car fixed at home
-                </h3>
-                <p className="text-blue-100 text-sm font-medium opacity-90">Expert mechanics available in 30 mins</p>
-                <div className="pt-2">
-                  <Button
-                    variant="secondary"
-                    className="bg-white text-blue-600 hover:bg-slate-50 font-bold shadow-lg text-xs h-10 px-6 rounded-full transition-all group-hover:pr-8"
-                  >
-                    Book a Mechanic →
-                  </Button>
+            {/* Promotional Banner */}
+            <section>
+              <div className="relative h-44 rounded-2xl overflow-hidden shadow-xl group cursor-pointer transition-transform duration-300 hover:scale-[1.02]">
+                <img
+                  src="https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=800&auto=format&fit=crop&q=80"
+                  alt="Professional mechanic at work"
+                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-900/95 via-blue-800/80 to-transparent z-10"></div>
+                <div className="absolute inset-0 z-20 flex items-center px-8">
+                  <div className="max-w-[70%] space-y-2">
+                    <h3 className="text-2xl font-bold text-white leading-tight drop-shadow-sm">
+                      Get your car fixed at home
+                    </h3>
+                    <p className="text-blue-100 text-sm font-medium opacity-90">Expert mechanics available in 30 mins</p>
+                    <div className="pt-2">
+                      <Button
+                        variant="secondary"
+                        className="bg-white text-blue-600 hover:bg-slate-50 font-bold shadow-lg text-xs h-10 px-6 rounded-full transition-all group-hover:pr-8"
+                      >
+                        Book a Mechanic →
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </section>
+            </section>
 
-        {/* Recommended Section (DYNAMIC) */}
-        <section>
-          <div className="flex items-center justify-between mb-4 px-1">
-            <h2 className="text-[11px] font-bold tracking-[0.2em] text-slate-400 uppercase">
-              Recommended Services
-            </h2>
-            <button className="text-sm text-blue-600 font-bold hover:text-blue-700 transition-colors">
-              View All
-            </button>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            {loadingServices ? (
-              [1, 2, 3, 4].map((i) => (
-                <div key={i} className="space-y-3">
-                  <Skeleton className="h-28 w-full rounded-2xl" />
-                  <Skeleton className="h-4 w-3/4 rounded-full" />
-                  <Skeleton className="h-4 w-1/2 rounded-full" />
-                </div>
-              ))
-            ) : services.length > 0 ? (
-              services.map((service) => (
-                <Link key={service.id} href={`/booking/${service.id}`}>
-                  <ServiceCard
-                    title={service.name}
-                    description={service.description}
-                    image={service.iconUrl || `https://source.unsplash.com/400x300/?${service.category.toLowerCase()}`}
-                    price={`₹${service.price}`}
-                  />
+            {/* Recommended Section (DYNAMIC) */}
+            <section>
+              <div className="flex items-center justify-between mb-4 px-1">
+                <h2 className="text-[11px] font-bold tracking-[0.2em] text-slate-400 uppercase">
+                  Recommended Services
+                </h2>
+                <Link href="/services">
+                  <button className="text-sm text-blue-600 font-bold hover:text-blue-700 transition-colors">
+                    View All
+                  </button>
                 </Link>
-              ))
-            ) : (
-              <div className="col-span-2 text-center py-16 bg-white rounded-3xl border-2 border-dashed border-slate-100 p-8 shadow-sm">
-                <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Wrench className="w-8 h-8 text-blue-300" />
-                </div>
-                <h3 className="text-lg font-bold text-slate-900 mb-1">No services yet</h3>
-                <p className="text-slate-500 text-sm max-w-[200px] mx-auto leading-relaxed">
-                  {profile?.role === 'admin'
-                    ? "Welcome Admin! Start by adding automotive or appliance services."
-                    : "We're setting up our services. Please check back soon!"}
-                </p>
-                {profile?.role === 'admin' ? (
-                  <Link href="/admin/services">
-                    <Button className="mt-6 bg-blue-600 hover:bg-blue-700 font-extrabold text-sm px-8 rounded-full shadow-lg shadow-blue-100 transition-all active:scale-95">
-                      Add First Service
-                    </Button>
-                  </Link>
-                ) : !profile && (
-                  <div className="mt-6 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Developer Tip</p>
-                    <p className="text-xs text-slate-600 font-medium leading-normal">
-                      Set your role to <span className="text-blue-600 font-bold">"admin"</span> in Firestore to access the management tools.
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {loadingServices ? (
+                  [1, 2, 3, 4].map((i) => (
+                    <div key={i} className="space-y-3">
+                      <Skeleton className="h-28 w-full rounded-2xl" />
+                      <Skeleton className="h-4 w-3/4 rounded-full" />
+                      <Skeleton className="h-4 w-1/2 rounded-full" />
+                    </div>
+                  ))
+                ) : services.length > 0 ? (
+                  services.map((service) => (
+                    <Link key={service.id} href={`/booking/${service.id}`}>
+                      <ServiceCard
+                        title={service.name}
+                        description={service.description}
+                        image={service.iconUrl || `https://source.unsplash.com/400x300/?${service.category.toLowerCase()}`}
+                        price={`₹${service.price}`}
+                      />
+                    </Link>
+                  ))
+                ) : (
+                  <div className="col-span-2 text-center py-16 bg-white rounded-3xl border-2 border-dashed border-slate-100 p-8 shadow-sm">
+                    <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Wrench className="w-8 h-8 text-blue-300" />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-900 mb-1">No services yet</h3>
+                    <p className="text-slate-500 text-sm max-w-[200px] mx-auto leading-relaxed">
+                      {profile?.role === 'admin'
+                        ? "Welcome Admin! Start by adding automotive or appliance services."
+                        : "We're setting up our services. Please check back soon!"}
                     </p>
+                    {profile?.role === 'admin' ? (
+                      <Link href="/admin/services">
+                        <Button className="mt-6 bg-blue-600 hover:bg-blue-700 font-extrabold text-sm px-8 rounded-full shadow-lg shadow-blue-100 transition-all active:scale-95">
+                          Add First Service
+                        </Button>
+                      </Link>
+                    ) : !profile && (
+                      <div className="mt-6 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Developer Tip</p>
+                        <p className="text-xs text-slate-600 font-medium leading-normal">
+                          Set your role to <span className="text-blue-600 font-bold">"admin"</span> in Firestore to access the management tools.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
-            )}
-          </div>
-        </section>
+            </section>
+          </>
+        )}
       </main>
 
       <BottomNavigation />

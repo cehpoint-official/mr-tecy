@@ -29,6 +29,15 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ===== Users Collection (plural) =====
+    // Added to support profile updates from the profile page
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow create: if isAuthenticated() && isOwner(userId);
+      allow update: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow delete: if isAdmin();
+    }
+
     // ===== Partners Collection =====
     
     match /partners/{partnerId} {
@@ -91,6 +100,26 @@ service cloud.firestore {
       allow update: if false;
       
       // Only admins can delete reviews
+      allow delete: if isAdmin();
+    }
+
+    // ===== Notifications Collection =====
+    
+    match /notifications/{notificationId} {
+      // Users can only read their own notifications
+      allow read: if isAuthenticated() && 
+                     resource.data.userId == request.auth.uid;
+      
+      // System/admins create notifications (users don't create their own)
+      allow create: if isAdmin();
+      
+      // Users can mark their own notifications as read
+      allow update: if isAuthenticated() && 
+                       resource.data.userId == request.auth.uid &&
+                       // Only allow updating the 'read' field
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      
+      // Only admins can delete notifications
       allow delete: if isAdmin();
     }
 

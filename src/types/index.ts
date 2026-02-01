@@ -16,6 +16,7 @@ export interface UserProfile {
     email: string;
     displayName: string;
     phoneNumber?: string;
+    phone?: string; // Alias for phoneNumber
     role: UserRole;
     photoURL?: string | null;
     addresses: Address[];

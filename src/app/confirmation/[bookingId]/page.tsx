@@ -25,27 +25,23 @@ export default function ConfirmationPage() {
             return;
         }
 
-        if (bookingId) {
-            fetchBooking();
-        }
-    }, [bookingId, user]);
+        if (!bookingId) return;
 
-    const fetchBooking = async () => {
-        try {
-            // For now, we'll just use the booking data from bookingService
-            // In a production app, you'd have a getBookingById method
-            const bookings = await bookingService.getCustomerBookings(user!.uid);
-            const currentBooking = bookings.find(b => b.id === bookingId);
-
-            if (currentBooking) {
-                setBooking(currentBooking);
+        // Subscribe to real-time booking updates
+        const unsubscribe = bookingService.subscribeToBooking(
+            bookingId as string,
+            (bookingData) => {
+                setBooking(bookingData);
+                setLoading(false);
+            },
+            (error) => {
+                console.error("Error subscribing to booking:", error);
+                setLoading(false);
             }
-        } catch (error) {
-            console.error("Error fetching booking:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
+        );
+
+        return () => unsubscribe();
+    }, [bookingId, user]);
 
     if (loading) {
         return (
@@ -163,15 +159,45 @@ export default function ConfirmationPage() {
                     </CardContent>
                 </Card>
 
-                {/* Status Info */}
-                <Card className="border-2 border-amber-200 bg-amber-50">
+                {/* Status Info - Dynamic based on booking status */}
+                <Card className={`border-2 ${booking.status === 'pending' ? 'border-amber-200 bg-amber-50' :
+                    booking.status === 'accepted' ? 'border-blue-200 bg-blue-50' :
+                        booking.status === 'in_progress' ? 'border-purple-200 bg-purple-50' :
+                            booking.status === 'completed' ? 'border-green-200 bg-green-50' :
+                                'border-slate-200 bg-slate-50'
+                    }`}>
                     <CardContent className="p-4">
                         <div className="flex gap-3">
-                            <Clock className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                            <Clock className={`w-5 h-5 flex-shrink-0 mt-0.5 ${booking.status === 'pending' ? 'text-amber-600' :
+                                booking.status === 'accepted' ? 'text-blue-600' :
+                                    booking.status === 'in_progress' ? 'text-purple-600' :
+                                        booking.status === 'completed' ? 'text-green-600' :
+                                            'text-slate-600'
+                                }`} />
                             <div>
-                                <p className="font-bold text-amber-900 mb-1">Waiting for Partner Confirmation</p>
-                                <p className="text-sm text-amber-700">
-                                    Your partner will confirm the booking soon. You'll be notified once confirmed.
+                                <p className={`font-bold mb-1 ${booking.status === 'pending' ? 'text-amber-900' :
+                                    booking.status === 'accepted' ? 'text-blue-900' :
+                                        booking.status === 'in_progress' ? 'text-purple-900' :
+                                            booking.status === 'completed' ? 'text-green-900' :
+                                                'text-slate-900'
+                                    }`}>
+                                    {booking.status === 'pending' && 'Waiting for Partner Confirmation'}
+                                    {booking.status === 'accepted' && '✓ Partner Confirmed - On the Way!'}
+                                    {booking.status === 'in_progress' && '🔧 Service in Progress'}
+                                    {booking.status === 'completed' && '✓ Service Completed'}
+                                    {booking.status === 'cancelled' && 'Booking Cancelled'}
+                                </p>
+                                <p className={`text-sm ${booking.status === 'pending' ? 'text-amber-700' :
+                                    booking.status === 'accepted' ? 'text-blue-700' :
+                                        booking.status === 'in_progress' ? 'text-purple-700' :
+                                            booking.status === 'completed' ? 'text-green-700' :
+                                                'text-slate-700'
+                                    }`}>
+                                    {booking.status === 'pending' && "Your partner will confirm the booking soon. You'll be notified once confirmed."}
+                                    {booking.status === 'accepted' && "Your partner has accepted the booking and is on their way to your location."}
+                                    {booking.status === 'in_progress' && "The partner is currently working on your service request."}
+                                    {booking.status === 'completed' && "Thank you for using our service! Please rate your experience."}
+                                    {booking.status === 'cancelled' && "This booking has been cancelled."}
                                 </p>
                             </div>
                         </div>

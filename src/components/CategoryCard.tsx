@@ -1,38 +1,38 @@
-import Image from "next/image"
-import { cn } from "@/lib/utils"
+"use client";
+
+import { useRouter } from "next/navigation";
 
 interface CategoryCardProps {
-    image: string
-    label: string
-    onClick?: () => void
-    className?: string
+    image: string;
+    label: string;
+    category?: string;
 }
 
-export function CategoryCard({ image, label, onClick, className }: CategoryCardProps) {
+export function CategoryCard({ image, label, category }: CategoryCardProps) {
+    const router = useRouter();
+
+    const handleClick = () => {
+        // Navigate to dedicated category page
+        const categoryParam = category || label;
+        router.push(`/category/${encodeURIComponent(categoryParam.toLowerCase())}`);
+    };
+
     return (
         <button
-            onClick={onClick}
-            className={cn(
-                "group relative flex flex-col items-center overflow-hidden rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 h-28 bg-slate-100",
-                className
-            )}
+            onClick={handleClick}
+            className="flex flex-col items-center gap-2.5 group cursor-pointer"
         >
-            {/* Background Image */}
-            <Image
-                src={image}
-                alt={label}
-                fill
-                sizes="(max-width: 768px) 25vw, 200px"
-                className="object-cover transition-transform duration-500 group-hover:scale-110"
-            />
-
-            {/* Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent z-10"></div>
-
-            {/* Label */}
-            <div className="absolute bottom-0 left-0 right-0 p-3 z-20">
-                <span className="text-sm font-bold text-white drop-shadow-lg">{label}</span>
+            <div className="relative w-full aspect-square rounded-2xl overflow-hidden shadow-md ring-2 ring-slate-100 group-hover:ring-blue-300 transition-all duration-300 group-hover:scale-105">
+                <img
+                    src={image}
+                    alt={label}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
             </div>
+            <span className="text-[11px] font-bold text-slate-700 group-hover:text-blue-600 transition-colors">
+                {label}
+            </span>
         </button>
-    )
+    );
 }

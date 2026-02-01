@@ -3,7 +3,7 @@
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Loader2, Bell, User, Menu } from "lucide-react";
+import { Loader2, User, Menu, X } from "lucide-react";
 import { Sidebar } from "@/components/admin/Sidebar";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,7 +20,7 @@ export default function AdminLayout({
 }: {
     children: React.ReactNode;
 }) {
-    const { profile, loading, logout } = useAuth();
+    const { profile, user, loading, logout } = useAuth();
     const router = useRouter();
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -52,40 +52,48 @@ export default function AdminLayout({
 
             {/* Main Content */}
             <div className="flex-1 flex flex-col min-w-0">
-                {/* Header */}
-                <header className="bg-white border-b sticky top-0 z-40">
-                    <div className="px-6 py-4 flex items-center justify-between">
-                        <div className="flex items-center gap-4">
+                {/* Header - Mobile Optimized */}
+                <header className="bg-gradient-to-r from-white via-blue-50/30 to-white border-b border-slate-200 sticky top-0 z-40 backdrop-blur-sm">
+                    <div className="px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className="lg:hidden p-0 h-8 w-8"
-                                onClick={() => setSidebarOpen(true)}
+                                className="lg:hidden p-0 h-9 w-9 rounded-full hover:bg-blue-100"
+                                onClick={() => setSidebarOpen(!sidebarOpen)}
                             >
-                                <Menu className="h-6 w-6 text-slate-600" />
+                                {sidebarOpen ? (
+                                    <X className="h-5 w-5 text-slate-700" />
+                                ) : (
+                                    <Menu className="h-5 w-5 text-slate-700" />
+                                )}
                             </Button>
                             <div>
-                                <h1 className="text-xl font-bold text-slate-900">Admin Dashboard</h1>
-                                <p className="text-sm text-slate-500 hidden sm:block">Manage your business operations</p>
+                                <h1 className="text-lg sm:text-xl font-extrabold text-slate-900">Admin Panel</h1>
+                                <p className="text-xs text-slate-500 hidden sm:block font-medium">Manage your business operations</p>
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-3">
-                            {/* Notifications */}
-                            <Button variant="ghost" size="sm" className="relative">
-                                <Bell className="h-5 w-5" />
-                                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-                            </Button>
-
-                            {/* User Menu */}
+                        <div className="flex items-center gap-2">
+                            {/* User Menu - Mobile Optimized */}
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="sm" className="gap-2">
-                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center">
-                                            <User className="h-4 w-4 text-white" />
+                                    <Button variant="ghost" className="h-9 w-9 sm:h-auto sm:w-auto rounded-full sm:rounded-xl p-0 sm:px-3 sm:gap-2">
+                                        <div className="w-9 h-9 rounded-full overflow-hidden border-2 border-white shadow-sm ring-2 ring-blue-100">
+                                            {profile?.photoURL ? (
+                                                <img
+                                                    src={profile.photoURL}
+                                                    alt={profile.displayName}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center">
+                                                    <User className="h-4 w-4 text-white" />
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="text-left hidden md:block">
-                                            <p className="text-sm font-medium">{profile.displayName}</p>
+                                            <p className="text-sm font-bold">{profile.displayName}</p>
                                             <p className="text-xs text-slate-500">Administrator</p>
                                         </div>
                                     </Button>
@@ -93,10 +101,10 @@ export default function AdminLayout({
                                 <DropdownMenuContent align="end" className="w-56">
                                     <DropdownMenuLabel>My Account</DropdownMenuLabel>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem>Profile Settings</DropdownMenuItem>
-                                    <DropdownMenuItem>Preferences</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => router.push("/profile")}>Profile Settings</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => router.push("/")}>Go to Website</DropdownMenuItem>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={logout} className="text-red-600">
+                                    <DropdownMenuItem onClick={logout} className="text-red-600 font-bold">
                                         Sign Out
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
@@ -113,4 +121,3 @@ export default function AdminLayout({
         </div>
     );
 }
-

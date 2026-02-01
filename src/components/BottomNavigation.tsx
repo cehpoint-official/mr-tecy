@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, ClipboardList, Plus } from "lucide-react"
+import { Home, ClipboardList, Plus, User } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export function BottomNavigation() {
@@ -10,16 +10,14 @@ export function BottomNavigation() {
 
     const navItems = [
         { href: "/", icon: Home, label: "Home" },
-        { href: "/booking", icon: Plus, label: "Book Now", isFloating: true },
+        { href: "/services", icon: Plus, label: "Book Now", isFloating: true },
         { href: "/history", icon: ClipboardList, label: "History" },
     ]
-
-    // We can't easily use hooks here if we want to add more, but let's keep it simple for now and just improve the Book Now button.
 
     return (
         <nav className="fixed bottom-6 left-0 right-0 z-50 px-6">
             <div className="max-w-md mx-auto bg-[#1a36a4] rounded-[32px] shadow-2xl">
-                <div className="flex items-center justify-between h-16 px-8 relative">
+                <div className="flex items-center justify-between h-16 px-12 relative">
                     {navItems.map((item) => {
                         const isActive = pathname === item.href
                         const Icon = item.icon

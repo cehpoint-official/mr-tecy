@@ -21,7 +21,6 @@ export default function BookingPage() {
     const [partners, setPartners] = useState<Partner[]>([]);
     const [selectedPartner, setSelectedPartner] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
-    const [booking, setBooking] = useState(false);
 
     useEffect(() => {
         if (serviceId) {
@@ -44,53 +43,19 @@ export default function BookingPage() {
         }
     };
 
-    const handleConfirmBooking = async () => {
-        if (!user || !service || !selectedPartner) {
+    const handleSelectPartner = () => {
+        if (!selectedPartner) {
             alert("Please select a partner first");
             return;
         }
 
-        if (!profile) {
+        if (!user) {
             router.push("/login");
             return;
         }
 
-        setBooking(true);
-        try {
-            const partner = partners.find(p => p.id === selectedPartner);
-
-            const bookingData = {
-                customerId: user.uid,
-                customerName: profile.displayName,
-                partnerId: selectedPartner,
-                partnerName: partner?.name || "Unknown Partner",
-                serviceId: service.id,
-                serviceName: service.name,
-                servicePrice: service.price,
-                type: "scheduled" as const,
-                scheduledTime: new Date() as any, // Will be converted to Timestamp by Firestore
-                location: profile.addresses[0] || {
-                    id: 'temp',
-                    label: 'Current',
-                    street: 'Default St',
-                    city: 'Default City',
-                    zipCode: '00000'
-                },
-                description: "Service request - booking via partner selection",
-                notes: "",
-                images: [],
-                paymentMethod: "COD" as const,
-                totalAmount: service.price
-            };
-
-            await bookingService.createBooking(bookingData);
-            router.push("/history");
-        } catch (error) {
-            console.error("Error creating booking:", error);
-            alert("Failed to create booking. Please try again.");
-        } finally {
-            setBooking(false);
-        }
+        // Navigate to schedule page with service and partner IDs
+        router.push(`/schedule?serviceId=${service?.id}&partnerId=${selectedPartner}`);
     };
 
     if (loading) {
@@ -188,11 +153,11 @@ export default function BookingPage() {
                         </div>
                     </div>
                     <Button
-                        onClick={handleConfirmBooking}
-                        disabled={!selectedPartner || booking}
+                        onClick={handleSelectPartner}
+                        disabled={!selectedPartner}
                         className="bg-blue-600 hover:bg-blue-700 h-14 flex-1 rounded-2xl font-extrabold text-lg shadow-xl shadow-blue-200 transition-all active:scale-95 disabled:opacity-50"
                     >
-                        {booking ? <Loader2 className="w-5 h-5 animate-spin" /> : "Confirm Booking →"}
+                        Continue to Schedule →
                     </Button>
                 </div>
             </div>
