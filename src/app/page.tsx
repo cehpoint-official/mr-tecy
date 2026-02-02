@@ -60,6 +60,9 @@ export default function HomePage() {
     }
   }, [searchQuery, services]);
 
+  const maintenanceService = services.find(s => s.name.toLowerCase().includes("full car maintenance"));
+  const promotionLink = maintenanceService ? `/booking/${maintenanceService.id}` : "/services";
+
 
   const handleLogout = async () => {
     await authService.logout();
@@ -232,12 +235,14 @@ export default function HomePage() {
                     </h3>
                     <p className="text-blue-100 text-sm font-medium opacity-90">Expert mechanics available in 30 mins</p>
                     <div className="pt-2">
-                      <Button
-                        variant="secondary"
-                        className="bg-white text-blue-600 hover:bg-slate-50 font-bold shadow-lg text-xs h-10 px-6 rounded-full transition-all group-hover:pr-8"
-                      >
-                        Book a Mechanic →
-                      </Button>
+                      <Link href={promotionLink}>
+                        <Button
+                          variant="secondary"
+                          className="bg-white text-blue-600 hover:bg-slate-50 font-bold shadow-lg text-xs h-10 px-6 rounded-full transition-all group-hover:pr-8"
+                        >
+                          Book a Mechanic →
+                        </Button>
+                      </Link>
                     </div>
                   </div>
                 </div>
