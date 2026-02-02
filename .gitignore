@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Firebase
+firebase-service-account-key.json
+.firebaserc
+
+.vercel
+.env*.local

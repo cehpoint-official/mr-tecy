@@ -14,6 +14,10 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
+if (!firebaseConfig.apiKey) {
+    console.error("Firebase API Key is missing. Check your .env.local file.");
+}
+
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 const db = getFirestore(app);
