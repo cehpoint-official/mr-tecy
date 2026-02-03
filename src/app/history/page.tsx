@@ -185,13 +185,27 @@ export default function HistoryPage() {
                                             </span>
                                         </div>
                                     </div>
-                                    <Badge
-                                        className={`font-bold text-xs px-3 py-1 border ${getStatusColor(
-                                            booking.status
-                                        )}`}
-                                    >
-                                        {booking.status.replace('_', ' ')}
-                                    </Badge>
+                                    <div className="flex flex-col items-end gap-2">
+                                        <Badge
+                                            className={`font-bold text-xs px-3 py-1 border ${getStatusColor(
+                                                booking.status
+                                            )}`}
+                                        >
+                                            {booking.status.replace('_', ' ')}
+                                        </Badge>
+
+                                        {booking.status === 'completed' && !booking.reviewed && (
+                                            <Link href={`/review/${booking.id}`}>
+                                                <Button
+                                                    size="sm"
+                                                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-full px-4 py-1.5 h-auto text-xs hover:shadow-lg hover:shadow-blue-200 transition-all active:scale-95 border-none"
+                                                >
+                                                    <Star className="w-3 h-3 mr-1 fill-white" />
+                                                    Rate
+                                                </Button>
+                                            </Link>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {/* Booking Timeline */}
@@ -251,17 +265,6 @@ export default function HistoryPage() {
                                             </Button>
                                         )}
 
-                                        {booking.status === 'completed' && (
-                                            <Link href={`/review/${booking.id}`}>
-                                                <Button
-                                                    size="sm"
-                                                    className="bg-blue-600 hover:bg-blue-700 font-bold rounded-full"
-                                                >
-                                                    <Star className="w-4 h-4 mr-1" />
-                                                    Leave Review
-                                                </Button>
-                                            </Link>
-                                        )}
 
                                         <Button
                                             variant="ghost"

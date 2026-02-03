@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ToastProvider } from "@/providers/ToastProvider";
+import { MobileGuard } from "@/components/MobileGuard";
 
 export const metadata: Metadata = {
   title: "Mr Tecy - Home Service Booking",
@@ -32,7 +33,9 @@ export default function RootLayout({
       <body className="antialiased">
         <AuthProvider>
           <ToastProvider>
-            {children}
+            <MobileGuard>
+              {children}
+            </MobileGuard>
           </ToastProvider>
         </AuthProvider>
       </body>

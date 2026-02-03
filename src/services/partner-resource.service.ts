@@ -16,15 +16,17 @@ export const partnerService = {
     // Create Partner (Admin only)
     async createPartner(partnerData: Omit<Partner, 'id' | 'rating' | 'reviewCount' | 'completedJobs'>) {
         try {
-            const partnersRef = collection(db, "partners");
+            const userRef = collection(db, "user");
             const newPartner = {
                 ...partnerData,
+                role: 'partner',
+                status: 'active',
                 rating: 0,
                 reviewCount: 0,
                 completedJobs: 0,
                 createdAt: serverTimestamp()
             };
-            const docRef = await addDoc(partnersRef, newPartner);
+            const docRef = await addDoc(userRef, newPartner);
             return { id: docRef.id, ...newPartner };
         } catch (error) {
             console.error("Error creating partner:", error);
@@ -35,8 +37,9 @@ export const partnerService = {
     // Get All Partners (Public - for listing)
     async getPartners() {
         try {
-            const partnersRef = collection(db, "partners");
-            const snapshot = await getDocs(partnersRef);
+            const userRef = collection(db, "user");
+            const q = query(userRef, where("role", "==", "partner"));
+            const snapshot = await getDocs(q);
             return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Partner));
         } catch (error) {
             console.error("Error getting partners:", error);
@@ -47,8 +50,12 @@ export const partnerService = {
     // Get Partners by Service (for filtering)
     async getPartnersByService(serviceId: string) {
         try {
-            const partnersRef = collection(db, "partners");
-            const q = query(partnersRef, where("services", "array-contains", serviceId));
+            const userRef = collection(db, "user");
+            const q = query(
+                userRef,
+                where("role", "==", "partner"),
+                where("services", "array-contains", serviceId)
+            );
             const snapshot = await getDocs(q);
             return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Partner));
         } catch (error) {
@@ -60,7 +67,7 @@ export const partnerService = {
     // Update Partner (Admin only)
     async updatePartner(partnerId: string, updates: Partial<Partner>) {
         try {
-            const partnerRef = doc(db, "partners", partnerId);
+            const partnerRef = doc(db, "user", partnerId);
             await updateDoc(partnerRef, updates);
         } catch (error) {
             console.error("Error updating partner:", error);
@@ -83,8 +90,12 @@ export const partnerService = {
         sortBy: 'rating' | 'price' | 'jobs' = 'rating'
     ) {
         try {
-            const partnersRef = collection(db, "partners");
-            const q = query(partnersRef, where("services", "array-contains", serviceId));
+            const userRef = collection(db, "user");
+            const q = query(
+                userRef,
+                where("role", "==", "partner"),
+                where("services", "array-contains", serviceId)
+            );
             const snapshot = await getDocs(q);
 
             let partners = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Partner));
@@ -125,11 +136,12 @@ export const partnerService = {
         onError?: (error: Error) => void
     ) {
         try {
-            const partnersRef = collection(db, "partners");
+            const userRef = collection(db, "user");
+            const q = query(userRef, where("role", "==", "partner"));
 
             // Use onSnapshot for real-time updates
             const unsubscribe = onSnapshot(
-                partnersRef,
+                q,
                 (snapshot) => {
                     const partners = snapshot.docs.map(doc => ({
                         id: doc.id,

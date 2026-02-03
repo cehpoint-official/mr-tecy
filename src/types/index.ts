@@ -22,6 +22,14 @@ export interface UserProfile {
     photoURL?: string | null;
     addresses: Address[];
     createdAt: Timestamp;
+    // Partner specific fields (stored in user collection)
+    rating?: number;
+    reviewCount?: number;
+    completedJobs?: number;
+    services?: string[];
+    bio?: string;
+    availability?: 'online' | 'offline';
+    priceMultiplier?: number;
 }
 
 // Partner is now a Resource, not a User
@@ -75,6 +83,7 @@ export interface Booking {
     totalAmount: number;
     paymentStatus: 'pending' | 'paid';
     warrantyValidUntil?: Timestamp;
+    reviewed?: boolean;
     createdAt: Timestamp;
     updatedAt?: Timestamp;
 }

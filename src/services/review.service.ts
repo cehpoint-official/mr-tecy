@@ -39,6 +39,10 @@ export const reviewService = {
             // Update partner's rating
             await this.updatePartnerRating(reviewData.partnerId);
 
+            // Mark booking as reviewed
+            const bookingRef = doc(db, "bookings", reviewData.bookingId);
+            await updateDoc(bookingRef, { reviewed: true });
+
             return { id: docRef.id, ...newReview };
         } catch (error) {
             console.error("[ReviewService] Error creating review:", error);
@@ -99,8 +103,8 @@ export const reviewService = {
             const averageRating = totalRating / reviews.length;
             const roundedRating = Math.round(averageRating * 10) / 10; // Round to 1 decimal
 
-            // Update partner document
-            const partnerRef = doc(db, "partners", partnerId);
+            // Update user document (partner)
+            const partnerRef = doc(db, "user", partnerId);
             await updateDoc(partnerRef, {
                 rating: roundedRating,
                 reviewCount: reviews.length

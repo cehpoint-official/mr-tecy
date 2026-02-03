@@ -105,17 +105,6 @@ export function Sidebar({ className, isOpen, onClose }: SidebarProps) {
                         {/* Footer */}
                         <div className="p-3 border-t space-y-1">
                             <Link
-                                href="/admin/settings"
-                                onClick={onClose}
-                                className={cn(
-                                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                                    "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                                )}
-                            >
-                                <Settings className="h-5 w-5 flex-shrink-0" />
-                                <span>Settings</span>
-                            </Link>
-                            <Link
                                 href="/"
                                 className={cn(
                                     "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
@@ -196,17 +185,6 @@ export function Sidebar({ className, isOpen, onClose }: SidebarProps) {
 
             {/* Footer */}
             <div className="p-3 border-t space-y-1">
-                <Link
-                    href="/admin/settings"
-                    className={cn(
-                        "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                        "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                    )}
-                    title={collapsed ? "Settings" : undefined}
-                >
-                    <Settings className="h-5 w-5 flex-shrink-0" />
-                    {!collapsed && <span>Settings</span>}
-                </Link>
                 <Link
                     href="/"
                     className={cn(
