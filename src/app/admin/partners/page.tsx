@@ -9,127 +9,78 @@ import {
     TableHeader,
     TableRow
 } from "@/components/ui/table";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue
-} from "@/components/ui/select";
-import { Plus, Pencil, Loader2, Users, MapPin, Star, CheckCircle2, UserCheck, Clock } from "lucide-react";
-import { partnerService } from "@/services/partner.service";
-import { serviceService } from "@/services/service.service";
-import { Partner, Service } from "@/types";
-import { GeoPoint } from "firebase/firestore";
+import { Loader2, Users, CheckCircle2, XCircle, ShieldCheck, ShieldOff } from "lucide-react";
+import { partnerApplicationService } from "@/services/partner.service";
+import { userService } from "@/services/user.service";
+import { UserProfile, PartnerApplication } from "@/types";
 import { MobileDataCard } from "@/components/admin/MobileDataCard";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+
+type PartnerWithDetails = UserProfile & Partial<PartnerApplication>;
 
 export default function PartnersPage() {
-    const [partners, setPartners] = useState<Partner[]>([]);
-    const [services, setServices] = useState<Service[]>([]);
+    const [partners, setPartners] = useState<PartnerWithDetails[]>([]);
     const [loading, setLoading] = useState(true);
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [submitting, setSubmitting] = useState(false);
+    const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
     const isMobile = useMediaQuery("(max-width: 768px)");
 
-    // Form State
-    const [editingId, setEditingId] = useState<string | null>(null);
-    const [formData, setFormData] = useState({
-        name: "",
-        bio: "",
-        contactInfo: "",
-        availability: "offline" as "online" | "offline",
-        selectedServices: [] as string[],
-    });
-
     useEffect(() => {
-        fetchData();
+        fetchPartners();
     }, []);
 
-    const fetchData = async () => {
+    const fetchPartners = async () => {
         setLoading(true);
         try {
-            const [partnersData, servicesData] = await Promise.all([
-                partnerService.getPartners(),
-                serviceService.getServices()
-            ]);
+            const partnersData = await partnerApplicationService.getApprovedPartnersWithDetails();
             setPartners(partnersData);
-            setServices(servicesData);
         } catch (error) {
-            console.error("Error fetching data:", error);
+            console.error("Error fetching partners:", error);
         } finally {
             setLoading(false);
         }
     };
 
-    const handleOpenDialog = (partner?: Partner) => {
-        if (partner) {
-            setEditingId(partner.id);
-            setFormData({
-                name: partner.name,
-                bio: partner.bio,
-                contactInfo: partner.contactInfo || "",
-                availability: partner.availability,
-                selectedServices: partner.services,
-            });
-        } else {
-            setEditingId(null);
-            setFormData({
-                name: "",
-                bio: "",
-                contactInfo: "",
-                availability: "offline",
-                selectedServices: [],
+    const handleSuspend = async (userId: string) => {
+        setProcessingIds(prev => new Set(prev).add(userId));
+        try {
+            await userService.suspendPartner(userId);
+            await fetchPartners();
+        } catch (error) {
+            console.error("Error suspending partner:", error);
+            alert("Failed to suspend partner");
+        } finally {
+            setProcessingIds(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(userId);
+                return newSet;
             });
         }
-        setIsDialogOpen(true);
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setSubmitting(true);
+    const handleActivate = async (userId: string) => {
+        setProcessingIds(prev => new Set(prev).add(userId));
         try {
-            const dataToSave = {
-                ...formData,
-                services: formData.selectedServices,
-                location: new GeoPoint(0, 0), // Placeholder
-                isVerified: true
-            };
-
-            if (editingId) {
-                await partnerService.updatePartner(editingId, dataToSave);
-            } else {
-                await partnerService.createPartner(dataToSave as any);
-            }
-            setIsDialogOpen(false);
-            fetchData();
+            await userService.activatePartner(userId);
+            await fetchPartners();
         } catch (error) {
-            console.error("Error saving partner:", error);
+            console.error("Error activating partner:", error);
+            alert("Failed to activate partner");
         } finally {
-            setSubmitting(false);
+            setProcessingIds(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(userId);
+                return newSet;
+            });
         }
     };
 
     // Calculate stats
     const stats = {
         total: partners.length,
-        online: partners.filter(p => p.availability === 'online').length,
-        offline: partners.filter(p => p.availability === 'offline').length,
-        avgRating: partners.length > 0
-            ? (partners.reduce((sum, p) => sum + p.rating, 0) / partners.length).toFixed(1)
-            : '0.0'
+        active: partners.filter(p => (p.status || 'active') === 'active').length,
+        suspended: partners.filter(p => p.status === 'suspended').length,
     };
 
     return (
@@ -140,20 +91,12 @@ export default function PartnersPage() {
                     <h1 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
                         Partners & Technicians
                     </h1>
-                    <p className="text-slate-600 text-xs sm:text-sm mt-1 font-medium">Manage your fleet of service providers.</p>
+                    <p className="text-slate-600 text-xs sm:text-sm mt-1 font-medium">Manage approved service partners.</p>
                 </div>
-                <Button
-                    onClick={() => handleOpenDialog()}
-                    className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 font-bold gap-2 shadow-lg shadow-blue-200 h-10 sm:h-11 px-4 sm:px-6 touch-target"
-                >
-                    <Plus className="h-4 w-4 sm:h-5 sm:w-5" />
-                    <span className="hidden sm:inline">Register Partner</span>
-                    <span className="sm:hidden">Register</span>
-                </Button>
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-3 gap-3 sm:gap-4">
                 <div className="p-3 sm:p-4 bg-white/95 backdrop-blur-md rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border border-slate-100 group">
                     <div className="flex items-center justify-between mb-1 sm:mb-2">
                         <p className="text-[10px] sm:text-xs text-slate-500 uppercase font-extrabold tracking-wider">Total Partners</p>
@@ -163,24 +106,17 @@ export default function PartnersPage() {
                 </div>
                 <div className="p-3 sm:p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border border-green-100 group">
                     <div className="flex items-center justify-between mb-1 sm:mb-2">
-                        <p className="text-[10px] sm:text-xs text-green-700 uppercase font-extrabold tracking-wider">Online</p>
+                        <p className="text-[10px] sm:text-xs text-green-700 uppercase font-extrabold tracking-wider">Active</p>
                         <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-600" />
                     </div>
-                    <p className="text-2xl sm:text-3xl font-black text-green-700 group-hover:scale-105 transition-transform">{stats.online}</p>
+                    <p className="text-2xl sm:text-3xl font-black text-green-700 group-hover:scale-105 transition-transform">{stats.active}</p>
                 </div>
-                <div className="p-3 sm:p-4 bg-slate-50 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border border-slate-200 group">
+                <div className="p-3 sm:p-4 bg-gradient-to-br from-red-50 to-rose-50 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border border-red-100 group">
                     <div className="flex items-center justify-between mb-1 sm:mb-2">
-                        <p className="text-[10px] sm:text-xs text-slate-500 uppercase font-extrabold tracking-wider">Offline</p>
-                        <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-slate-400" />
+                        <p className="text-[10px] sm:text-xs text-red-700 uppercase font-extrabold tracking-wider">Suspended</p>
+                        <XCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-red-600" />
                     </div>
-                    <p className="text-2xl sm:text-3xl font-black text-slate-600 group-hover:scale-105 transition-transform">{stats.offline}</p>
-                </div>
-                <div className="p-3 sm:p-4 bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 border border-amber-100 group">
-                    <div className="flex items-center justify-between mb-1 sm:mb-2">
-                        <p className="text-[10px] sm:text-xs text-amber-700 uppercase font-extrabold tracking-wider">Avg Rating</p>
-                        <Star className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-600 fill-amber-600" />
-                    </div>
-                    <p className="text-2xl sm:text-3xl font-black text-amber-700 group-hover:scale-105 transition-transform">{stats.avgRating}</p>
+                    <p className="text-2xl sm:text-3xl font-black text-red-700 group-hover:scale-105 transition-transform">{stats.suspended}</p>
                 </div>
             </div>
 
@@ -189,39 +125,39 @@ export default function PartnersPage() {
                 <div className="space-y-3">
                     {loading ? (
                         [...Array(3)].map((_, i) => (
-                            <div key={i} className="h-32 bg-slate-100 animate-pulse rounded-xl" />
+                            <div key={i} className="h-40 bg-slate-100 animate-pulse rounded-xl" />
                         ))
                     ) : partners.length === 0 ? (
                         <div className="text-center py-12 bg-white/95 backdrop-blur-md rounded-xl shadow-md">
-                            <UserCheck className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-                            <p className="text-sm font-medium text-slate-400">No partners registered yet.</p>
+                            <Users className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+                            <p className="text-sm font-medium text-slate-400">No partners approved yet.</p>
                         </div>
                     ) : (
                         partners.map((partner) => {
-                            const partnerSkills = partner.services.map(s => {
-                                const service = services.find(sv => sv.id === s);
-                                return service?.name || s;
-                            });
+                            const isProcessing = processingIds.has(partner.uid);
+                            const isActive = (partner.status || 'active') === 'active';
 
                             return (
                                 <MobileDataCard
-                                    key={partner.id}
-                                    title={partner.name}
-                                    subtitle={partner.bio}
+                                    key={partner.uid}
+                                    title={partner.displayName}
+                                    subtitle={partner.email}
                                     status={{
-                                        label: partner.availability === 'online' ? 'Online' : 'Offline',
-                                        variant: partner.availability === 'online' ? 'default' : 'secondary'
+                                        label: isActive ? 'Active' : 'Suspended',
+                                        variant: isActive ? 'default' : 'destructive'
                                     }}
                                     metadata={[
-                                        { label: "Rating", value: `★ ${partner.rating.toFixed(1)}` },
-                                        { label: "Skills", value: `${partner.services.length} services` },
-                                        { label: "Contact", value: partner.contactInfo || 'N/A' }
+                                        { label: "Phone", value: partner.phone || partner.phoneNumber || 'N/A' },
+                                        { label: "Skills", value: partner.skills?.join(', ') || 'N/A' },
+                                        { label: "Service Area", value: partner.serviceArea || 'N/A' },
+                                        { label: "Experience", value: partner.experience ? `${partner.experience} years` : 'N/A' }
                                     ]}
                                     actions={[
                                         {
-                                            label: "Edit",
-                                            icon: <Pencil className="h-4 w-4" />,
-                                            onClick: () => handleOpenDialog(partner)
+                                            label: isActive ? "Suspend" : "Activate",
+                                            icon: isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> :
+                                                isActive ? <ShieldOff className="h-4 w-4" /> : <ShieldCheck className="h-4 w-4" />,
+                                            onClick: () => isActive ? handleSuspend(partner.uid) : handleActivate(partner.uid)
                                         }
                                     ]}
                                 />
@@ -235,8 +171,9 @@ export default function PartnersPage() {
                         <TableHeader className="bg-slate-50">
                             <TableRow>
                                 <TableHead className="font-bold">Partner Name</TableHead>
+                                <TableHead className="font-bold">Contact</TableHead>
                                 <TableHead className="font-bold">Skills</TableHead>
-                                <TableHead className="font-bold">Rating</TableHead>
+                                <TableHead className="font-bold">Service Area</TableHead>
                                 <TableHead className="font-bold">Status</TableHead>
                                 <TableHead className="text-right font-bold">Actions</TableHead>
                             </TableRow>
@@ -244,151 +181,101 @@ export default function PartnersPage() {
                         <TableBody>
                             {loading ? (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center py-12">
+                                    <TableCell colSpan={6} className="text-center py-12">
                                         <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto" />
                                     </TableCell>
                                 </TableRow>
                             ) : partners.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center py-12 text-slate-400">
-                                        No partners registered yet.
+                                    <TableCell colSpan={6} className="text-center py-12 text-slate-400">
+                                        No partners approved yet.
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                partners.map((partner) => (
-                                    <TableRow key={partner.id}>
-                                        <TableCell className="font-medium">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">
-                                                    {partner.name.charAt(0)}
+                                partners.map((partner) => {
+                                    const isProcessing = processingIds.has(partner.uid);
+                                    const isActive = (partner.status || 'active') === 'active';
+
+                                    return (
+                                        <TableRow key={partner.uid}>
+                                            <TableCell className="font-medium">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xs">
+                                                        {partner.displayName.charAt(0).toUpperCase()}
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-bold">{partner.displayName}</div>
+                                                        <div className="text-[10px] text-slate-500">{partner.email}</div>
+                                                    </div>
                                                 </div>
-                                                {partner.name}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex gap-1 flex-wrap">
-                                                {partner.services.slice(0, 2).map(s => {
-                                                    const service = services.find(sv => sv.id === s);
-                                                    return (
-                                                        <span key={s} className="bg-slate-100 text-slate-600 text-[10px] px-1.5 py-0.5 rounded-full font-medium">
-                                                            {service?.name || s}
-                                                        </span>
-                                                    )
-                                                })}
-                                                {partner.services.length > 2 && <span className="text-[10px] text-slate-400">+{partner.services.length - 2} more</span>}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center gap-1 text-amber-500 font-bold">
-                                                <span>★</span> {partner.rating.toFixed(1)}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${partner.availability === 'online' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'
-                                                }`}>
-                                                {partner.availability}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="text-slate-500"
-                                                onClick={() => handleOpenDialog(partner)}
-                                            >
-                                                <Pencil className="h-4 w-4" />
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="text-sm text-slate-600">
+                                                    {partner.phone || partner.phoneNumber || 'N/A'}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex gap-1 flex-wrap max-w-[200px]">
+                                                    {partner.skills && partner.skills.length > 0 ? (
+                                                        <>
+                                                            {partner.skills.slice(0, 2).map(skill => (
+                                                                <Badge key={skill} variant="secondary" className="text-[10px]">
+                                                                    {skill}
+                                                                </Badge>
+                                                            ))}
+                                                            {partner.skills.length > 2 && (
+                                                                <span className="text-[10px] text-slate-400">+{partner.skills.length - 2}</span>
+                                                            )}
+                                                        </>
+                                                    ) : (
+                                                        <span className="text-sm text-slate-400">N/A</span>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="text-sm text-slate-600">
+                                                    {partner.serviceArea || 'N/A'}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge
+                                                    variant={isActive ? "default" : "destructive"}
+                                                    className="font-bold uppercase text-[10px]"
+                                                >
+                                                    {isActive ? 'Active' : 'Suspended'}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <Button
+                                                    variant={isActive ? "destructive" : "default"}
+                                                    size="sm"
+                                                    onClick={() => isActive ? handleSuspend(partner.uid) : handleActivate(partner.uid)}
+                                                    disabled={isProcessing}
+                                                    className="gap-1.5 font-bold"
+                                                >
+                                                    {isProcessing ? (
+                                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                                    ) : isActive ? (
+                                                        <>
+                                                            <ShieldOff className="h-4 w-4" />
+                                                            Suspend
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <ShieldCheck className="h-4 w-4" />
+                                                            Activate
+                                                        </>
+                                                    )}
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })
                             )}
                         </TableBody>
                     </Table>
                 </div>
             )}
-
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                        <DialogTitle>{editingId ? "Edit Partner" : "Register Partner"}</DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="pname">Full Name</Label>
-                            <Input
-                                id="pname"
-                                value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                placeholder="Technician Name"
-                                required
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="contact">Contact Info</Label>
-                            <Input
-                                id="contact"
-                                value={formData.contactInfo}
-                                onChange={(e) => setFormData({ ...formData, contactInfo: e.target.value })}
-                                placeholder="Phone or Email"
-                                required
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Availability</Label>
-                            <Select
-                                value={formData.availability}
-                                onValueChange={(val: any) => setFormData({ ...formData, availability: val })}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select status" />
-                                </SelectTrigger>
-                                <SelectContent className="z-[100]">
-                                    <SelectItem value="online">Online</SelectItem>
-                                    <SelectItem value="offline">Offline</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Skills (Services)</Label>
-                            <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto border p-2 rounded-md bg-slate-50">
-                                {services.map(service => (
-                                    <button
-                                        key={service.id}
-                                        type="button"
-                                        onClick={() => {
-                                            const current = formData.selectedServices;
-                                            const updated = current.includes(service.id)
-                                                ? current.filter(id => id !== service.id)
-                                                : [...current, service.id];
-                                            setFormData({ ...formData, selectedServices: updated });
-                                        }}
-                                        className={`text-[10px] px-2 py-1 rounded-full font-bold transition-colors ${formData.selectedServices.includes(service.id)
-                                            ? "bg-blue-600 text-white"
-                                            : "bg-white border text-slate-500 hover:border-blue-300"
-                                            }`}
-                                    >
-                                        {service.name}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="bio">Bio / Notes</Label>
-                            <Textarea
-                                id="bio"
-                                value={formData.bio}
-                                onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                                placeholder="Experience, specialized tools, etc."
-                            />
-                        </div>
-                        <DialogFooter>
-                            <Button type="submit" className="bg-blue-600 hover:bg-blue-700 w-full" disabled={submitting}>
-                                {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : editingId ? "Update Partner" : "Register Partner"}
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
         </div>
     );
 }

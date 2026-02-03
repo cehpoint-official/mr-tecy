@@ -25,8 +25,18 @@ service cloud.firestore {
     match /user/{userId} {
       allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
       allow create: if isAuthenticated() && isOwner(userId);
-      allow update: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      
+      // Admin can update any user, users can update themselves
+      // BUT users cannot change their own role or status (security critical)
+      allow update: if isAuthenticated() && (
+        (isOwner(userId) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'status'])) ||
+        isAdmin()
+      );
+      
       allow delete: if isAdmin();
+      
+      // Allow admins to list/query all users
+      allow list: if isAdmin();
     }
 
     // ===== Users Collection (plural) =====
@@ -103,7 +113,37 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ===== Partner Applications Collection =====
+    
+    match /partnerApplications/{applicationId} {
+      // Authenticated users can create their own application
+      // - Document ID MUST match their UID
+      // - userId field MUST match their UID
+      // - status MUST be 'pending' on creation
+      // - Validate required non-timestamp fields exist
+      allow create: if isAuthenticated() && 
+                       applicationId == request.auth.uid &&
+                       request.resource.data.userId == request.auth.uid &&
+                       request.resource.data.status == 'pending' &&
+                       request.resource.data.keys().hasAll([
+                         'userId', 'fullName', 'email', 'phone', 
+                         'skills', 'serviceArea', 'experience', 'status'
+                       ]);
+      
+      // Users can read their own application, admins can read all
+      // CRITICAL: Check if document exists first before accessing resource.data
+      allow read: if isAuthenticated() && 
+                     (applicationId == request.auth.uid || isAdmin());
+      
+      // ONLY admins can update applications (prevent users from changing status)
+      allow update: if isAdmin();
+      
+      // ONLY admins can delete applications
+      allow delete: if isAdmin();
+    }
+
     // ===== Notifications Collection =====
+
     
     match /notifications/{notificationId} {
       // Users can only read their own notifications

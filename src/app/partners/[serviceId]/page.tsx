@@ -3,13 +3,12 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { partnerService } from "@/services/partner.service";
 import { serviceService } from "@/services/service.service";
 import { Partner, Service } from "@/types";
 import { Button } from "@/components/ui/button";
 import { PartnerCard } from "@/components/PartnerCard";
 import { ChevronLeft, Loader2, Filter, SlidersHorizontal } from "lucide-react";
-import Link from "next/link";
+
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -18,6 +17,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { partnerService } from "@/services/partner-resource.service";
 
 type SortOption = 'rating' | 'price' | 'jobs';
 

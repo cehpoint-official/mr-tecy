@@ -4,10 +4,10 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { serviceService } from "@/services/service.service";
-import { partnerService } from "@/services/partner.service";
 import { userService } from "@/services/user.service";
+import { partnerApplicationService } from "@/services/partner.service";
 import { cloudinaryUploadService } from "@/services/cloudinary-upload.service";
-import { Service, Partner, Address } from "@/types";
+import { Service, UserProfile, PartnerApplication, Address } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -48,7 +48,7 @@ function SchedulePageContent() {
 
     // Booking data from API
     const [service, setService] = useState<Service | null>(null);
-    const [partner, setPartner] = useState<Partner | null>(null);
+    const [partner, setPartner] = useState<(UserProfile & Partial<PartnerApplication>) | null>(null);
     const [loading, setLoading] = useState(true);
 
     // Form states
@@ -96,14 +96,23 @@ function SchedulePageContent() {
 
     const loadData = async () => {
         try {
-            const [serviceData, partnerData] = await Promise.all([
+            const [serviceData, partnerUserData] = await Promise.all([
                 serviceService.getServiceById(serviceId as string),
-                partnerService.getPartnersByService(serviceId as string),
+                userService.getUserProfile(partnerId as string), // Fetch partner by user ID
             ]);
 
             setService(serviceData);
-            const foundPartner = partnerData.find((p) => p.id === partnerId);
-            setPartner(foundPartner || null);
+
+            // Enrich partner with application data
+            if (partnerUserData) {
+                const partnerApp = await partnerApplicationService.getPartnerStatus(partnerId as string);
+                setPartner({
+                    ...partnerUserData,
+                    ...(partnerApp || {})
+                } as any);
+            } else {
+                setPartner(null);
+            }
         } catch (error) {
             console.error("Error loading data:", error);
         } finally {
@@ -197,15 +206,15 @@ function SchedulePageContent() {
             serviceId: service!.id,
             serviceName: service!.name,
             servicePrice: service!.price,
-            partnerId: partner!.id,
-            partnerName: partner!.name,
+            partnerId: partner!.uid, // Changed from partner.id to partner.uid
+            partnerName: partner!.displayName, // Changed from partner.name to partner.displayName
             type: bookingType,
             scheduledTime: scheduledDateTime.toISOString(),
             location: selectedAddress,
             description,
             notes,
             images: uploadedImages,
-            totalAmount: service!.price * (partner?.priceMultiplier || 1),
+            totalAmount: service!.price, // Remove priceMultiplier as it's not on UserProfile
         };
 
         // Store in session storage for review page
@@ -273,19 +282,18 @@ function SchedulePageContent() {
                         <div className="pt-3.5 mt-3.5 border-t border-white/20 flex items-center justify-between">
                             <div className="flex items-center gap-2.5">
                                 <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-base font-bold shadow-md">
-                                    {partner.name.charAt(0).toUpperCase()}
+                                    {partner.displayName.charAt(0).toUpperCase()}
                                 </div>
                                 <div>
-                                    <p className="text-sm font-bold">{partner.name}</p>
+                                    <p className="text-sm font-bold">{partner.displayName}</p>
                                     <div className="flex items-center gap-1 text-blue-200 text-xs mt-0.5">
                                         <ShieldCheck className="w-3 h-3" />
-                                        <span>{partner.completedJobs} jobs completed</span>
+                                        <span>{partner.experience || 0} years experience</span>
                                     </div>
                                 </div>
                             </div>
                             <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm px-2.5 py-1.5 rounded-full">
-                                <Star className="w-4 h-4 fill-amber-300 text-amber-300" />
-                                <span className="text-sm font-bold">{partner.rating.toFixed(1)}</span>
+                                <span className="text-sm font-bold">{partner.serviceArea || 'Service Available'}</span>
                             </div>
                         </div>
                     </div>

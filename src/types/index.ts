@@ -1,6 +1,6 @@
 import { Timestamp, GeoPoint } from 'firebase/firestore';
 
-export type UserRole = 'customer' | 'admin';
+export type UserRole = 'customer' | 'admin' | 'partner';
 
 export interface Address {
     id: string;
@@ -18,6 +18,7 @@ export interface UserProfile {
     phoneNumber?: string;
     phone?: string; // Alias for phoneNumber
     role: UserRole;
+    status?: 'active' | 'suspended'; // Partner active/suspended status
     photoURL?: string | null;
     addresses: Address[];
     createdAt: Timestamp;
@@ -76,6 +77,23 @@ export interface Booking {
     warrantyValidUntil?: Timestamp;
     createdAt: Timestamp;
     updatedAt?: Timestamp;
+}
+
+// Partner Application Status
+export type PartnerStatus = 'pending' | 'approved' | 'rejected';
+
+// Partner Application for user role upgrade
+export interface PartnerApplication {
+    userId: string;
+    fullName: string;
+    email: string;
+    phone: string;
+    skills: string[];
+    serviceArea: string;
+    experience: number;
+    status: PartnerStatus;
+    createdAt: Timestamp;
+    updatedAt: Timestamp;
 }
 
 // Customer review/feedback for completed bookings

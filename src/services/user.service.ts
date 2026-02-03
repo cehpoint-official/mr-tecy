@@ -5,10 +5,14 @@ import {
     updateDoc,
     serverTimestamp,
     arrayUnion,
-    arrayRemove
+    arrayRemove,
+    collection,
+    query,
+    where,
+    getDocs
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { UserProfile, Address } from "@/types";
+import { UserProfile, Address, UserRole } from "@/types";
 
 export const userService = {
     // Create or Update User Profile
@@ -122,6 +126,65 @@ export const userService = {
             });
         } catch (error) {
             console.error("Error deleting address:", error);
+            throw error;
+        }
+    },
+
+    /**
+     * Get all users with a specific role (Admin only)
+     */
+    async getUsersByRole(role: UserRole): Promise<UserProfile[]> {
+        try {
+            const usersRef = collection(db, "user");
+            const q = query(usersRef, where("role", "==", role));
+            const snapshot = await getDocs(q);
+            return snapshot.docs.map(doc => doc.data() as UserProfile);
+        } catch (error) {
+            console.error("Error getting users by role:", error);
+            throw error;
+        }
+    },
+
+    /**
+     * Suspend a partner (Admin only)
+     */
+    async suspendPartner(userId: string): Promise<void> {
+        try {
+            console.log('[SUSPEND] Starting for userId:', userId);
+            const userRef = doc(db, "user", userId);
+
+            const update = {
+                status: 'suspended' as const,
+                updatedAt: serverTimestamp()
+            };
+            console.log('[SUSPEND] Update payload:', update);
+
+            await updateDoc(userRef, update);
+            console.log('[SUSPEND] Success');
+        } catch (error) {
+            console.error("[SUSPEND] Error:", error);
+            throw error;
+        }
+    },
+
+    /**
+     * Activate a partner (Admin only)
+     */
+    async activatePartner(userId: string): Promise<void> {
+        try {
+            console.log('[ACTIVATE] Starting for userId:', userId);
+            const userRef = doc(db, "user", userId);
+
+            const update = {
+                status: 'active' as const,
+                updatedAt: serverTimestamp()
+            };
+            console.log('[ACTIVATE] Update payload:', update);
+
+            await updateDoc(userRef, update);
+            console.log('[ACTIVATE] Success');
+        } catch (error) {
+            console.error("[ACTIVATE] Error:", error);
             throw error;
         }
     }

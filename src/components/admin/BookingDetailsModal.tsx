@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Booking } from "@/types";
 import { format } from "date-fns";
-import { Calendar, Clock, CreditCard, MapPin, Phone, User, Wrench } from "lucide-react";
+import { Calendar, Clock, CreditCard, Variable, MapPin, Phone, User, Wrench, FileText, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface BookingDetailsModalProps {
@@ -78,12 +78,70 @@ export function BookingDetailsModal({ booking, open, onOpenChange }: BookingDeta
                             <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
                                 <User className="h-5 w-5 text-slate-400" />
                                 <div>
+                                    <p className="text-xs text-slate-500">Customer Name</p>
+                                    <p className="font-medium text-slate-900">{booking.customerName || 'N/A'}</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                                <div className="h-5 w-5 flex items-center justify-center text-slate-400 font-mono text-xs border rounded">ID</div>
+                                <div>
                                     <p className="text-xs text-slate-500">Customer ID</p>
                                     <p className="font-medium text-slate-900">{booking.customerId.slice(-8)}</p>
                                 </div>
                             </div>
                         </div>
                     </div>
+
+
+
+                    {/* Problem Description */}
+                    <div className="space-y-3">
+                        <h4 className="font-bold text-slate-900">Problem Description</h4>
+                        <div className="p-4 bg-slate-50 rounded-lg border border-slate-100">
+                            <div className="flex gap-3">
+                                <FileText className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="text-slate-700 text-sm leading-relaxed">
+                                        {booking.description}
+                                    </p>
+                                    {booking.notes && (
+                                        <div className="mt-3 pt-3 border-t border-slate-200">
+                                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Notes</p>
+                                            <p className="text-slate-600 text-sm">{booking.notes}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Uploaded Images */}
+                    {booking.images && booking.images.length > 0 && (
+                        <div className="space-y-3">
+                            <h4 className="font-bold text-slate-900">Uploaded Images ({booking.images.length})</h4>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                {booking.images.map((img, idx) => (
+                                    <div key={idx} className="relative aspect-video rounded-lg overflow-hidden border border-slate-200 group bg-slate-100">
+                                        <img
+                                            src={img}
+                                            alt={`Issue photo ${idx + 1}`}
+                                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                                        />
+                                        <a
+                                            href={img}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                                        >
+                                            <span className="text-white text-xs font-bold px-3 py-1.5 border border-white/30 rounded-full bg-white/10 backdrop-blur-sm">
+                                                View Full
+                                            </span>
+                                        </a>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Booking Details */}
                     <div className="space-y-3">
@@ -135,18 +193,8 @@ export function BookingDetailsModal({ booking, open, onOpenChange }: BookingDeta
                             </p>
                         </div>
                     )}
-
-                    {/* Actions */}
-                    <div className="flex gap-3 pt-4 border-t">
-                        <Button className="flex-1 bg-blue-600 hover:bg-blue-700">
-                            Update Status
-                        </Button>
-                        <Button variant="outline" className="flex-1">
-                            Contact Customer
-                        </Button>
-                    </div>
                 </div>
             </DialogContent>
-        </Dialog>
+        </Dialog >
     );
 }

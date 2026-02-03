@@ -4,9 +4,8 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { serviceService } from "@/services/service.service";
-import { partnerService } from "@/services/partner.service";
-import { bookingService } from "@/services/booking.service";
-import { Service, Partner } from "@/types";
+import { partnerMatchingService } from "@/services/partner-matching.service";
+import { Service, UserProfile, PartnerApplication } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, MapPin, Star, ShieldCheck, ChevronLeft, CreditCard } from "lucide-react";
@@ -18,7 +17,7 @@ export default function BookingPage() {
     const { user, profile } = useAuth();
 
     const [service, setService] = useState<Service | null>(null);
-    const [partners, setPartners] = useState<Partner[]>([]);
+    const [partners, setPartners] = useState<Array<UserProfile & Partial<PartnerApplication>>>([]);
     const [selectedPartner, setSelectedPartner] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -32,7 +31,7 @@ export default function BookingPage() {
         try {
             const [serviceData, partnersData] = await Promise.all([
                 serviceService.getServiceById(serviceId as string),
-                partnerService.getPartnersByService(serviceId as string)
+                partnerMatchingService.getPartnersForService(serviceId as string)
             ]);
             setService(serviceData);
             setPartners(partnersData);
@@ -121,35 +120,34 @@ export default function BookingPage() {
                     ) : (
                         partners.map((partner) => (
                             <div
-                                key={partner.id}
-                                onClick={() => setSelectedPartner(partner.id)}
-                                className={`group cursor-pointer p-4 rounded-2xl border-2 transition-all ${selectedPartner === partner.id
+                                key={partner.uid}
+                                onClick={() => setSelectedPartner(partner.uid)}
+                                className={`group cursor-pointer p-4 rounded-2xl border-2 transition-all ${selectedPartner === partner.uid
                                     ? "border-blue-600 bg-blue-50/50 ring-4 ring-blue-100"
                                     : "border-transparent bg-white shadow-sm hover:shadow-md"
                                     }`}
                             >
                                 <div className="flex items-center gap-4">
                                     <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-black text-xl sm:text-2xl overflow-hidden relative border-2 border-white shadow-lg">
-                                        {partner.name.charAt(0)}
+                                        {partner.displayName.charAt(0)}
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center justify-between gap-2 mb-1">
-                                            <h4 className="font-black text-slate-900 text-base sm:text-lg truncate">{partner.name}</h4>
-                                            <div className="flex items-center gap-1 text-amber-500 font-bold text-sm flex-shrink-0">
-                                                <Star className="w-4 h-4 fill-amber-500" />
-                                                <span>{partner.rating.toFixed(1)}</span>
+                                            <h4 className="font-black text-slate-900 text-base sm:text-lg truncate">{partner.displayName}</h4>
+                                            <div className="flex items-center gap-1 text-slate-500 font-bold text-xs flex-shrink-0">
+                                                <ShieldCheck className="w-3.5 h-3.5 text-green-500" />
+                                                <span>{partner.experience || 0} yrs</span>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-1.5 text-slate-500 text-xs font-bold uppercase tracking-tight">
-                                            <ShieldCheck className="w-3.5 h-3.5 text-green-500" />
-                                            <span>{partner.completedJobs} Jobs • {partner.availability}</span>
+                                        <div className="flex items-center gap-1.5 text-slate-500 text-xs font-bold">
+                                            <span>{partner.skills?.slice(0, 2).join(', ') || 'General'}</span>
                                         </div>
                                     </div>
                                 </div>
-                                {selectedPartner === partner.id && (
+                                {selectedPartner === partner.uid && (
                                     <div className="mt-3 pt-3 border-t border-blue-200 flex items-center gap-2 text-[11px] font-extrabold text-blue-600 animate-in fade-in slide-in-from-top-2 duration-300">
                                         <MapPin className="w-3.5 h-3.5" />
-                                        <span>Selected for your location</span>
+                                        <span>Selected • {partner.serviceArea || 'Your location'}</span>
                                     </div>
                                 )}
                             </div>

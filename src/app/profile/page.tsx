@@ -29,6 +29,9 @@ import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import Link from "next/link";
 import { cloudinaryUploadService } from "@/services/cloudinary-upload.service";
+import { partnerApplicationService } from "@/services/partner.service";
+import { PartnerApplication } from "@/types";
+import { Briefcase } from "lucide-react";
 
 export default function ProfilePage() {
     const router = useRouter();
@@ -36,6 +39,8 @@ export default function ProfilePage() {
     const [isEditing, setIsEditing] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [partnerApp, setPartnerApp] = useState<PartnerApplication | null>(null);
+    const [loadingPartnerStatus, setLoadingPartnerStatus] = useState(true);
 
     const [formData, setFormData] = useState({
         displayName: "",
@@ -62,6 +67,25 @@ export default function ProfilePage() {
             });
         }
     }, [user, profile, loading, router]);
+
+    // Fetch partner application status
+    useEffect(() => {
+        async function fetchPartnerStatus() {
+            if (!user || !profile) return;
+
+            setLoadingPartnerStatus(true);
+            try {
+                const app = await partnerApplicationService.getPartnerStatus(user.uid);
+                setPartnerApp(app);
+            } catch (error) {
+                console.error("Error fetching partner status:", error);
+            } finally {
+                setLoadingPartnerStatus(false);
+            }
+        }
+
+        fetchPartnerStatus();
+    }, [user, profile]);
 
     const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -352,6 +376,44 @@ export default function ProfilePage() {
                                         <div>
                                             <p className="font-bold text-slate-900">Admin Dashboard</p>
                                             <p className="text-xs text-slate-500">Manage platform</p>
+                                        </div>
+                                    </div>
+                                    <ChevronLeft className="w-5 h-5 text-slate-400 rotate-180" />
+                                </button>
+                            </Link>
+                        )}
+
+                        {/* Partner Application */}
+                        {profile.role === "customer" && !loadingPartnerStatus && !partnerApp && (
+                            <Link href="/partner/apply">
+                                <button className="w-full flex items-center justify-between p-4 rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all group border-2 border-transparent hover:border-blue-200">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                            <Briefcase className="w-5 h-5 text-white" />
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-slate-900">Become a Partner</p>
+                                            <p className="text-xs text-slate-500">Join our network of professionals</p>
+                                        </div>
+                                    </div>
+                                    <ChevronLeft className="w-5 h-5 text-slate-400 rotate-180" />
+                                </button>
+                            </Link>
+                        )}
+
+                        {/* Partner Status (if already applied) */}
+                        {profile.role === "partner" && !loadingPartnerStatus && partnerApp && (
+                            <Link href="/partner/status">
+                                <button className="w-full flex items-center justify-between p-4 rounded-xl hover:bg-slate-50 transition-colors group">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center group-hover:bg-purple-100 transition-colors">
+                                            <Briefcase className="w-5 h-5 text-purple-600" />
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-slate-900">Partner Application</p>
+                                            <p className="text-xs text-slate-500">
+                                                Status: <span className="font-semibold capitalize">{partnerApp.status}</span>
+                                            </p>
                                         </div>
                                     </div>
                                     <ChevronLeft className="w-5 h-5 text-slate-400 rotate-180" />

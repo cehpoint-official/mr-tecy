@@ -92,6 +92,14 @@ export default function HomePage() {
                   </Button>
                 </Link>
               )}
+              {profile?.role === 'partner' && (
+                <Link href="/partner/dashboard">
+                  <Button variant="outline" size="sm" className="h-9 border-green-200 text-green-700 font-extrabold bg-green-50/50 hover:bg-green-100 rounded-full px-4 flex items-center gap-1.5 shadow-sm">
+                    <Wrench className="w-4 h-4" />
+                    PARTNER
+                  </Button>
+                </Link>
+              )}
               {!authLoading && (
                 user ? (
                   <DropdownMenu>
@@ -116,6 +124,11 @@ export default function HomePage() {
                               Admin Account
                             </span>
                           )}
+                          {profile?.role === 'partner' && (
+                            <span className="text-[10px] items-center bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-bold w-fit mt-1 uppercase">
+                              Partner Account
+                            </span>
+                          )}
                         </div>
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
@@ -124,6 +137,14 @@ export default function HomePage() {
                           <DropdownMenuItem className="cursor-pointer font-bold text-blue-600">
                             <LayoutDashboard className="mr-2 h-4 w-4" />
                             <span>Admin Dashboard</span>
+                          </DropdownMenuItem>
+                        </Link>
+                      )}
+                      {profile?.role === 'partner' && (
+                        <Link href="/partner/dashboard">
+                          <DropdownMenuItem className="cursor-pointer font-bold text-green-600">
+                            <Wrench className="mr-2 h-4 w-4" />
+                            <span>Partner Dashboard</span>
                           </DropdownMenuItem>
                         </Link>
                       )}

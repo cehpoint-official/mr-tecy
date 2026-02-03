@@ -8,15 +8,22 @@ import { StatCard } from "@/components/admin/StatCard";
 import { RealtimeIndicator } from "@/components/admin/RealtimeIndicator";
 import { bookingService } from "@/services/booking.service";
 import { serviceService } from "@/services/service.service";
-import { partnerService } from "@/services/partner.service";
+import { partnerService } from "@/services/partner-resource.service";
+import { partnerApplicationService } from "@/services/partner.service";
+import { PartnerApplication } from "@/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRealtimeBookings } from "@/hooks/useRealtimeBookings";
+import { Badge } from "@/components/ui/badge";
+import { UserCheck, UserX, Loader2 } from "lucide-react";
 
 export default function AdminDashboard() {
     const { bookings, loading: bookingsLoading } = useRealtimeBookings();
     const [serviceStats, setServiceStats] = useState({ total: 0, active: 0, inactive: 0 });
     const [partnerCount, setPartnerCount] = useState(0);
     const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+    const [partnerApps, setPartnerApps] = useState<PartnerApplication[]>([]);
+    const [loadingApps, setLoadingApps] = useState(true);
+    const [processingApps, setProcessingApps] = useState<Set<string>>(new Set());
 
     // Subscribe to service stats
     useEffect(() => {
@@ -43,6 +50,61 @@ export default function AdminDashboard() {
 
         return () => unsubscribe();
     }, []);
+
+    // Fetch partner applications
+    useEffect(() => {
+        async function loadPartnerApplications() {
+            setLoadingApps(true);
+            try {
+                const apps = await partnerApplicationService.getPendingApplications();
+                setPartnerApps(apps);
+            } catch (error) {
+                console.error("Error loading partner applications:", error);
+            } finally {
+                setLoadingApps(false);
+            }
+        }
+
+        loadPartnerApplications();
+    }, []);
+
+    const handleApprovePartner = async (userId: string) => {
+        setProcessingApps(prev => new Set(prev).add(userId));
+        try {
+            await partnerApplicationService.approvePartner(userId);
+            // Refresh applications list
+            const apps = await partnerApplicationService.getPendingApplications();
+            setPartnerApps(apps);
+        } catch (error) {
+            console.error("Error approving partner:", error);
+            alert("Failed to approve partner application");
+        } finally {
+            setProcessingApps(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(userId);
+                return newSet;
+            });
+        }
+    };
+
+    const handleRejectPartner = async (userId: string) => {
+        setProcessingApps(prev => new Set(prev).add(userId));
+        try {
+            await partnerApplicationService.rejectPartner(userId);
+            // Refresh applications list
+            const apps = await partnerApplicationService.getPendingApplications();
+            setPartnerApps(apps);
+        } catch (error) {
+            console.error("Error rejecting partner:", error);
+            alert("Failed to reject partner application");
+        } finally {
+            setProcessingApps(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(userId);
+                return newSet;
+            });
+        }
+    };
 
     // Calculate booking stats
     const bookingStats = {
@@ -179,6 +241,104 @@ export default function AdminDashboard() {
                         </CardContent>
                     </Card>
                 </div>
+
+                {/* Partner Applications Section */}
+                <Card className="border-none shadow-md hover:shadow-xl bg-white/95 backdrop-blur-md transition-all duration-300">
+                    <CardHeader className="pb-4">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <CardTitle className="text-base sm:text-lg font-black text-slate-900">Partner Applications</CardTitle>
+                                <CardDescription className="text-[11px] text-slate-500 font-medium">
+                                    {loadingApps ? 'Loading...' : `${partnerApps.length} pending ${partnerApps.length === 1 ? 'application' : 'applications'}`}
+                                </CardDescription>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        {loadingApps ? (
+                            <div className="space-y-3">
+                                {[1, 2].map((i) => (
+                                    <div key={i} className="h-24 bg-slate-100 animate-pulse rounded-xl" />
+                                ))}
+                            </div>
+                        ) : partnerApps.length === 0 ? (
+                            <div className="text-center py-12 text-slate-400">
+                                <UserCheck className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                                <p className="text-sm font-medium">No pending applications</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {partnerApps.map((app) => {
+                                    const isProcessing = processingApps.has(app.userId);
+                                    return (
+                                        <div
+                                            key={app.userId}
+                                            className="p-4 bg-gradient-to-r from-slate-50 to-slate-50/50 rounded-xl border border-slate-100 hover:border-slate-200 hover:shadow-md transition-all"
+                                        >
+                                            <div className="flex flex-col gap-3">
+                                                <div className="flex items-start justify-between">
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <p className="font-bold text-slate-900 text-sm sm:text-base">{app.fullName}</p>
+                                                            <Badge className="bg-yellow-500 text-white text-[10px]">
+                                                                Pending
+                                                            </Badge>
+                                                        </div>
+                                                        <p className="text-xs text-slate-500">Email: {app.email}</p>
+                                                        <p className="text-xs text-slate-500">Phone: {app.phone}</p>
+                                                        <p className="text-xs text-slate-500">Area: {app.serviceArea}</p>
+                                                        <p className="text-xs text-slate-500">Experience: {app.experience} years</p>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs text-slate-500 mb-1.5">Skills:</p>
+                                                    <div className="flex flex-wrap gap-1.5">
+                                                        {app.skills.map((skill) => (
+                                                            <Badge key={skill} variant="secondary" className="text-[10px]">
+                                                                {skill}
+                                                            </Badge>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-2 mt-2">
+                                                    <Button
+                                                        onClick={() => handleApprovePartner(app.userId)}
+                                                        disabled={isProcessing}
+                                                        className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold text-xs h-9 rounded-lg"
+                                                    >
+                                                        {isProcessing ? (
+                                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                                        ) : (
+                                                            <>
+                                                                <UserCheck className="h-4 w-4 mr-1.5" />
+                                                                Approve
+                                                            </>
+                                                        )}
+                                                    </Button>
+                                                    <Button
+                                                        onClick={() => handleRejectPartner(app.userId)}
+                                                        disabled={isProcessing}
+                                                        variant="outline"
+                                                        className="flex-1 border-2 border-red-200 text-red-600 hover:bg-red-50 font-bold text-xs h-9 rounded-lg"
+                                                    >
+                                                        {isProcessing ? (
+                                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                                        ) : (
+                                                            <>
+                                                                <UserX className="h-4 w-4 mr-1.5" />
+                                                                Reject
+                                                            </>
+                                                        )}
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                     {/* Recent Bookings - Mobile Optimized */}
