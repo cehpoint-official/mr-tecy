@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Wrench, Users, Calendar, Banknote, TrendingUp, Activity, ChevronRight, Clock, CheckCircle2 } from "lucide-react";
+import { Wrench, Users, Calendar, Banknote, Clock, CheckCircle2, TrendingUp, Activity, ChevronRight, UserCheck, UserX, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/admin/StatCard";
@@ -14,7 +14,7 @@ import { PartnerApplication } from "@/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRealtimeBookings } from "@/hooks/useRealtimeBookings";
 import { Badge } from "@/components/ui/badge";
-import { UserCheck, UserX, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function AdminDashboard() {
     const { bookings, loading: bookingsLoading } = useRealtimeBookings();
@@ -72,7 +72,6 @@ export default function AdminDashboard() {
         setProcessingApps(prev => new Set(prev).add(userId));
         try {
             await partnerApplicationService.approvePartner(userId);
-            // Refresh applications list
             const apps = await partnerApplicationService.getPendingApplications();
             setPartnerApps(apps);
         } catch (error) {
@@ -91,7 +90,6 @@ export default function AdminDashboard() {
         setProcessingApps(prev => new Set(prev).add(userId));
         try {
             await partnerApplicationService.rejectPartner(userId);
-            // Refresh applications list
             const apps = await partnerApplicationService.getPendingApplications();
             setPartnerApps(apps);
         } catch (error) {
@@ -119,51 +117,53 @@ export default function AdminDashboard() {
     const recentBookings = bookings.slice(0, 5);
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 pb-8">
-            {/* Premium Background Gradient */}
-            <div className="absolute top-0 left-0 right-0 h-[35vh] bg-gradient-to-b from-blue-100/40 via-cyan-50/30 to-transparent pointer-events-none" />
-            <div className="absolute top-20 left-1/4 w-96 h-96 bg-blue-200/20 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute top-40 right-1/4 w-96 h-96 bg-cyan-200/20 rounded-full blur-3xl pointer-events-none" />
-
-            <div className="relative z-10 px-4 sm:px-6 lg:px-8 max-w-[1600px] mx-auto space-y-6 sm:space-y-8 pt-4 sm:pt-6">
-                {/* Header - Mobile Optimized */}
-                <div className="flex items-center justify-between animate-in fade-in slide-in-from-top-4 duration-700">
+        <div className="min-h-screen pb-12 overflow-x-hidden">
+            <div className="px-4 sm:px-6 lg:px-8 max-w-[1600px] mx-auto space-y-8 pt-8">
+                {/* Header - Minimal & Clean */}
+                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 animate-fade-in">
                     <div>
-                        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 bg-clip-text text-transparent">
-                            Dashboard
-                        </h1>
-                        <p className="text-slate-600 text-xs sm:text-sm mt-1 font-medium">Welcome back! Here's what's happening today.</p>
+                        <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+                            Overview
+                        </h2>
+                        <p className="text-slate-500 font-medium mt-1 text-sm sm:text-base">
+                            {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                        </p>
                     </div>
-                    <RealtimeIndicator lastUpdated={lastUpdated} />
+                    <div className="flex items-center gap-3">
+                        <RealtimeIndicator lastUpdated={lastUpdated} />
+                    </div>
                 </div>
 
-                {/* Stats Grid - Mobile: Single column, Tablet: 2 columns, Desktop: 4 columns */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <Link href="/admin/services">
+                {/* Primary Stats Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+                    <Link href="/admin/services" className="group">
                         <StatCard
                             title="Active Services"
                             value={serviceStats.active}
                             icon={Wrench}
                             color="from-blue-500 to-blue-600"
                             loading={false}
+                            className="h-full"
                         />
                     </Link>
-                    <Link href="/admin/partners">
+                    <Link href="/admin/partners" className="group">
                         <StatCard
                             title="Total Partners"
                             value={partnerCount}
                             icon={Users}
                             color="from-cyan-500 to-cyan-600"
                             loading={false}
+                            className="h-full"
                         />
                     </Link>
-                    <Link href="/admin/bookings">
+                    <Link href="/admin/bookings" className="group">
                         <StatCard
                             title="Total Bookings"
                             value={bookingStats.total}
                             icon={Calendar}
                             color="from-indigo-500 to-indigo-600"
                             loading={bookingsLoading}
+                            className="h-full"
                         />
                     </Link>
                     <StatCard
@@ -172,301 +172,250 @@ export default function AdminDashboard() {
                         icon={Banknote}
                         color="from-emerald-500 to-emerald-600"
                         loading={bookingsLoading}
+                        className="h-full"
                     />
                 </div>
 
-                {/* Secondary Stats - Mobile Optimized */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-                    <Card className="border-none shadow-md hover:shadow-xl bg-white/95 backdrop-blur-md transition-all duration-300 group hover:scale-[1.02] active:scale-[0.98]">
-                        <CardHeader className="pb-2 sm:pb-3 px-4 sm:px-6">
-                            <CardTitle className="text-[10px] sm:text-xs font-extrabold tracking-wider text-amber-600 uppercase flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                                Pending Bookings
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="px-4 sm:px-6 pb-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-3 bg-amber-100 rounded-xl">
-                                    <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-amber-600" />
-                                </div>
-                                <div>
-                                    <div className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent group-hover:scale-105 transition-transform">
-                                        {bookingStats.pending}
-                                    </div>
-                                    <p className="text-[11px] text-slate-500 mt-0.5 font-semibold">Requires attention</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="border-none shadow-md hover:shadow-xl bg-white/95 backdrop-blur-md transition-all duration-300 group hover:scale-[1.02] active:scale-[0.98]">
-                        <CardHeader className="pb-2 sm:pb-3 px-4 sm:px-6">
-                            <CardTitle className="text-[10px] sm:text-xs font-extrabold tracking-wider text-green-600 uppercase flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                                Completed Today
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="px-4 sm:px-6 pb-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-3 bg-green-100 rounded-xl">
-                                    <CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
-                                </div>
-                                <div>
-                                    <div className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent group-hover:scale-105 transition-transform">
-                                        {bookingStats.completed}
-                                    </div>
-                                    <p className="text-[11px] text-slate-500 mt-0.5 font-semibold">Services delivered</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="border-none shadow-md hover:shadow-xl bg-white/95 backdrop-blur-md transition-all duration-300 group hover:scale-[1.02] active:scale-[0.98]">
-                        <CardHeader className="pb-2 sm:pb-3 px-4 sm:px-6">
-                            <CardTitle className="text-[10px] sm:text-xs font-extrabold tracking-wider text-blue-600 uppercase flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                                Service Categories
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="px-4 sm:px-6 pb-4">
-                            <div className="flex items-center gap-3">
-                                <div className="p-3 bg-blue-100 rounded-xl">
-                                    <Wrench className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
-                                </div>
-                                <div>
-                                    <div className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent group-hover:scale-105 transition-transform">
-                                        {serviceStats.total}
-                                    </div>
-                                    <p className="text-[11px] text-slate-500 mt-0.5 font-semibold">Total services offered</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                {/* Quick Status Row */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+                    <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+                        <div className="p-3 bg-amber-50 rounded-xl text-amber-600">
+                            <Clock className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <p className="text-sm font-bold text-slate-400 uppercase tracking-wider">Pending</p>
+                            <p className="text-2xl font-black text-slate-900">{bookingStats.pending}</p>
+                        </div>
+                    </div>
+                    <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+                        <div className="p-3 bg-green-50 rounded-xl text-green-600">
+                            <CheckCircle2 className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <p className="text-sm font-bold text-slate-400 uppercase tracking-wider">Completed</p>
+                            <p className="text-2xl font-black text-slate-900">{bookingStats.completed}</p>
+                        </div>
+                    </div>
+                    <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+                        <div className="p-3 bg-blue-50 rounded-xl text-blue-600">
+                            <Activity className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <p className="text-sm font-bold text-slate-400 uppercase tracking-wider">Services</p>
+                            <p className="text-2xl font-black text-slate-900">{serviceStats.total}</p>
+                        </div>
+                    </div>
                 </div>
 
-                {/* Partner Applications Section */}
-                <Card className="border-none shadow-md hover:shadow-xl bg-white/95 backdrop-blur-md transition-all duration-300">
-                    <CardHeader className="pb-4">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <CardTitle className="text-base sm:text-lg font-black text-slate-900">Partner Applications</CardTitle>
-                                <CardDescription className="text-[11px] text-slate-500 font-medium">
-                                    {loadingApps ? 'Loading...' : `${partnerApps.length} pending ${partnerApps.length === 1 ? 'application' : 'applications'}`}
-                                </CardDescription>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-slide-up" style={{ animationDelay: '0.3s' }}>
+                    {/* Left Column: Applications & Bookings */}
+                    <div className="lg:col-span-2 space-y-8">
+                        {/* Partner Applications */}
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between px-1">
+                                <h3 className="text-lg font-bold text-slate-900">Partner Applications</h3>
+                                <Badge variant="outline" className="bg-white">{partnerApps.length} Pending</Badge>
                             </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        {loadingApps ? (
-                            <div className="space-y-3">
-                                {[1, 2].map((i) => (
-                                    <div key={i} className="h-24 bg-slate-100 animate-pulse rounded-xl" />
-                                ))}
-                            </div>
-                        ) : partnerApps.length === 0 ? (
-                            <div className="text-center py-12 text-slate-400">
-                                <UserCheck className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                                <p className="text-sm font-medium">No pending applications</p>
-                            </div>
-                        ) : (
-                            <div className="space-y-3">
-                                {partnerApps.map((app) => {
-                                    const isProcessing = processingApps.has(app.userId);
-                                    return (
-                                        <div
-                                            key={app.userId}
-                                            className="p-4 bg-gradient-to-r from-slate-50 to-slate-50/50 rounded-xl border border-slate-100 hover:border-slate-200 hover:shadow-md transition-all"
-                                        >
-                                            <div className="flex flex-col gap-3">
-                                                <div className="flex items-start justify-between">
-                                                    <div className="flex-1">
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            <p className="font-bold text-slate-900 text-sm sm:text-base">{app.fullName}</p>
-                                                            <Badge className="bg-yellow-500 text-white text-[10px]">
-                                                                Pending
-                                                            </Badge>
-                                                        </div>
-                                                        <p className="text-xs text-slate-500">Email: {app.email}</p>
-                                                        <p className="text-xs text-slate-500">Phone: {app.phone}</p>
-                                                        <p className="text-xs text-slate-500">Area: {app.serviceArea}</p>
-                                                        <p className="text-xs text-slate-500">Experience: {app.experience} years</p>
-                                                    </div>
-                                                </div>
-                                                <div>
-                                                    <p className="text-xs text-slate-500 mb-1.5">Skills:</p>
-                                                    <div className="flex flex-wrap gap-1.5">
-                                                        {app.skills.map((skill) => (
-                                                            <Badge key={skill} variant="secondary" className="text-[10px]">
-                                                                {skill}
-                                                            </Badge>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                                <div className="flex gap-2 mt-2">
-                                                    <Button
-                                                        onClick={() => handleApprovePartner(app.userId)}
-                                                        disabled={isProcessing}
-                                                        className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold text-xs h-9 rounded-lg"
-                                                    >
-                                                        {isProcessing ? (
-                                                            <Loader2 className="h-4 w-4 animate-spin" />
-                                                        ) : (
-                                                            <>
-                                                                <UserCheck className="h-4 w-4 mr-1.5" />
-                                                                Approve
-                                                            </>
-                                                        )}
-                                                    </Button>
-                                                    <Button
-                                                        onClick={() => handleRejectPartner(app.userId)}
-                                                        disabled={isProcessing}
-                                                        variant="outline"
-                                                        className="flex-1 border-2 border-red-200 text-red-600 hover:bg-red-50 font-bold text-xs h-9 rounded-lg"
-                                                    >
-                                                        {isProcessing ? (
-                                                            <Loader2 className="h-4 w-4 animate-spin" />
-                                                        ) : (
-                                                            <>
-                                                                <UserX className="h-4 w-4 mr-1.5" />
-                                                                Reject
-                                                            </>
-                                                        )}
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                    {/* Recent Bookings - Mobile Optimized */}
-                    <Card className="border-none shadow-md hover:shadow-xl bg-white/95 backdrop-blur-md transition-all duration-300">
-                        <CardHeader className="pb-4">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <CardTitle className="text-base sm:text-lg font-black text-slate-900">Recent Bookings</CardTitle>
-                                    <CardDescription className="text-[11px] text-slate-500 font-medium">Latest service requests</CardDescription>
-                                </div>
-                                <Link href="/admin/bookings">
-                                    <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 font-bold text-xs h-9 px-3 rounded-lg">
-                                        View All <ChevronRight className="w-3.5 h-3.5 ml-1" />
-                                    </Button>
+                            <Card className="border-none shadow-sm bg-white overflow-hidden">
+                                <CardContent className="p-0">
+                                    {loadingApps ? (
+                                        <div className="p-8 space-y-4">
+                                            {[1, 2].map((i) => (
+                                                <div key={i} className="h-20 bg-slate-50 animate-pulse rounded-xl" />
+                                            ))}
+                                        </div>
+                                    ) : partnerApps.length === 0 ? (
+                                        <div className="text-center py-16 text-slate-400 bg-slate-50/50">
+                                            <UserCheck className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                                            <p className="text-sm font-medium">All caught up!</p>
+                                        </div>
+                                    ) : (
+                                        <div className="divide-y divide-slate-100">
+                                            {partnerApps.map((app) => (
+                                                <div key={app.userId} className="p-6 hover:bg-slate-50/80 transition-colors">
+                                                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                                                        <div className="space-y-1">
+                                                            <div className="flex items-center gap-2">
+                                                                <h4 className="font-bold text-slate-900 text-lg">{app.fullName}</h4>
+                                                                <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-200 border-none">Pending</Badge>
+                                                            </div>
+                                                            <div className="flex flex-wrap gap-4 text-sm text-slate-500 font-medium">
+                                                                <span>{app.email}</span>
+                                                                <span className="w-1 h-1 rounded-full bg-slate-300 self-center" />
+                                                                <span>{app.phone}</span>
+                                                                <span className="w-1 h-1 rounded-full bg-slate-300 self-center" />
+                                                                <span>{app.experience}y exp</span>
+                                                            </div>
+                                                            <div className="flex flex-wrap gap-2 pt-2">
+                                                                {app.skills.map(skill => (
+                                                                    <Badge key={skill} variant="secondary" className="bg-slate-100 text-slate-600 border-transparent hover:bg-slate-200">
+                                                                        {skill}
+                                                                    </Badge>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex gap-2 sm:self-center shrink-0">
+                                                            <Button
+                                                                onClick={() => handleApprovePartner(app.userId)}
+                                                                disabled={processingApps.has(app.userId)}
+                                                                className="bg-green-600 hover:bg-green-700 font-bold shadow-green-200 shadow-lg"
+                                                                size="sm"
+                                                            >
+                                                                {processingApps.has(app.userId) ? <Loader2 className="w-4 h-4 animate-spin" /> : "Approve"}
+                                                            </Button>
+                                                            <Button
+                                                                onClick={() => handleRejectPartner(app.userId)}
+                                                                disabled={processingApps.has(app.userId)}
+                                                                variant="outline"
+                                                                className="text-red-600 border-red-100 hover:bg-red-50 hover:text-red-700 font-bold"
+                                                                size="sm"
+                                                            >
+                                                                Reject
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        {/* Recent Bookings List */}
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between px-1">
+                                <h3 className="text-lg font-bold text-slate-900">Recent Bookings</h3>
+                                <Link href="/admin/bookings" className="text-sm font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                                    View All <ChevronRight className="w-4 h-4" />
                                 </Link>
                             </div>
-                        </CardHeader>
-                        <CardContent>
-                            {bookingsLoading ? (
-                                <div className="space-y-3">
-                                    {[1, 2, 3].map((i) => (
-                                        <div key={i} className="h-16 bg-slate-100 animate-pulse rounded-xl" />
-                                    ))}
-                                </div>
-                            ) : recentBookings.length === 0 ? (
-                                <div className="text-center py-12 text-slate-400">
-                                    <Activity className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                                    <p className="text-sm font-medium">No bookings yet</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-2.5">
-                                    {recentBookings.map((booking) => (
-                                        <div
-                                            key={booking.id}
-                                            className="flex items-start sm:items-center justify-between p-3 sm:p-4 bg-gradient-to-r from-slate-50 to-slate-50/50 rounded-xl hover:from-slate-100 hover:to-slate-100/50 transition-all duration-200 border border-slate-100 hover:border-slate-200 hover:shadow-md"
-                                        >
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <p className="font-bold text-slate-900 truncate text-sm sm:text-base">{booking.serviceName}</p>
-                                                    <span className={`inline-flex text-[10px] px-2 py-0.5 rounded-full font-extrabold uppercase ${booking.status === 'pending' ? 'bg-amber-100 text-amber-700' :
-                                                        booking.status === 'completed' ? 'bg-green-100 text-green-700' :
-                                                            'bg-blue-100 text-blue-700'
-                                                        }`}>
-                                                        {booking.status}
-                                                    </span>
+
+                            <Card className="border-none shadow-sm bg-white overflow-hidden">
+                                <CardContent className="p-0">
+                                    {bookingsLoading ? (
+                                        <div className="p-8 space-y-4">
+                                            {[1, 2, 3].map((i) => (
+                                                <div key={i} className="h-16 bg-slate-50 animate-pulse rounded-xl" />
+                                            ))}
+                                        </div>
+                                    ) : recentBookings.length === 0 ? (
+                                        <div className="text-center py-16 text-slate-400">
+                                            <Calendar className="h-10 w-10 mx-auto mb-3 opacity-20" />
+                                            <p className="text-sm font-medium">No bookings yet</p>
+                                        </div>
+                                    ) : (
+                                        <div className="divide-y divide-slate-100">
+                                            {recentBookings.map((booking) => (
+                                                <div key={booking.id} className="p-4 sm:px-6 hover:bg-slate-50 transition-all flex items-center justify-between group">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className={cn(
+                                                            "w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-sm",
+                                                            booking.status === 'completed' ? "bg-green-500" :
+                                                                booking.status === 'pending' ? "bg-amber-500" :
+                                                                    "bg-blue-500"
+                                                        )}>
+                                                            {booking.serviceName.charAt(0)}
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{booking.serviceName}</p>
+                                                            <div className="flex items-center gap-2 text-xs font-medium mt-0.5">
+                                                                <span className={cn(
+                                                                    "px-2 py-0.5 rounded-full capitalize",
+                                                                    booking.status === 'completed' ? "bg-green-100 text-green-700" :
+                                                                        booking.status === 'pending' ? "bg-amber-100 text-amber-700" :
+                                                                            "bg-blue-100 text-blue-700"
+                                                                )}>
+                                                                    {booking.status}
+                                                                </span>
+                                                                <span className="text-slate-400">•</span>
+                                                                <span className="text-slate-500">ID: {booking.id.slice(-6).toUpperCase()}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="font-black text-slate-900">₹{booking.servicePrice}</p>
+                                                        <p className="text-xs text-slate-400 font-medium">Today</p> {/* ideally use actual date */}
+                                                    </div>
                                                 </div>
-                                                <p className="text-xs text-slate-400 font-medium">ID: {booking.id.slice(-8)}</p>
+                                            ))}
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </div>
+
+                    {/* Right Column: Quick Actions & Status */}
+                    <div className="space-y-8">
+                        {/* Quick Actions */}
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-bold text-slate-900 px-1">Quick Actions</h3>
+                            <Card className="border-none shadow-sm bg-white overflow-hidden p-2">
+                                <div className="grid grid-cols-1 gap-2">
+                                    <Link href="/admin/services">
+                                        <div className="p-4 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all group cursor-pointer flex items-center gap-4">
+                                            <div className="p-3 bg-blue-50 text-blue-600 rounded-lg group-hover:scale-110 transition-transform">
+                                                <Wrench className="w-5 h-5" />
                                             </div>
-                                            <div className="text-right ml-3 flex-shrink-0">
-                                                <p className="font-black text-slate-900 text-base sm:text-lg">₹{booking.servicePrice}</p>
+                                            <div>
+                                                <p className="font-bold text-slate-900 text-sm">Manage Services</p>
+                                                <p className="text-xs text-slate-500 font-medium">Add or edit offerings</p>
                                             </div>
+                                            <ChevronRight className="w-4 h-4 ml-auto text-slate-300 group-hover:text-blue-500" />
+                                        </div>
+                                    </Link>
+                                    <Link href="/admin/partners">
+                                        <div className="p-4 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all group cursor-pointer flex items-center gap-4">
+                                            <div className="p-3 bg-cyan-50 text-cyan-600 rounded-lg group-hover:scale-110 transition-transform">
+                                                <Users className="w-5 h-5" />
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-slate-900 text-sm">Manage Partners</p>
+                                                <p className="text-xs text-slate-500 font-medium">View partner network</p>
+                                            </div>
+                                            <ChevronRight className="w-4 h-4 ml-auto text-slate-300 group-hover:text-cyan-500" />
+                                        </div>
+                                    </Link>
+                                    <Link href="/">
+                                        <div className="p-4 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all group cursor-pointer flex items-center gap-4">
+                                            <div className="p-3 bg-indigo-50 text-indigo-600 rounded-lg group-hover:scale-110 transition-transform">
+                                                <TrendingUp className="w-5 h-5" />
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-slate-900 text-sm">View Website</p>
+                                                <p className="text-xs text-slate-500 font-medium">Go to customer view</p>
+                                            </div>
+                                            <ChevronRight className="w-4 h-4 ml-auto text-slate-300 group-hover:text-indigo-500" />
+                                        </div>
+                                    </Link>
+                                </div>
+                            </Card>
+                        </div>
+
+                        {/* System Health */}
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between px-1">
+                                <h3 className="text-lg font-bold text-slate-900">System Status</h3>
+                                <Badge variant="outline" className="text-green-600 bg-green-50 border-green-100">Operational</Badge>
+                            </div>
+                            <Card className="border-none shadow-sm bg-white overflow-hidden">
+                                <CardContent className="p-4 space-y-3">
+                                    {['Database', 'Authentication', 'Storage', 'Hosting'].map(service => (
+                                        <div key={service} className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 transition-colors">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse" />
+                                                <span className="text-sm font-bold text-slate-700">{service}</span>
+                                            </div>
+                                            <span className="text-xs font-bold text-green-600">Online</span>
                                         </div>
                                     ))}
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    {/* Quick Actions - Mobile Optimized */}
-                    <Card className="border-none shadow-md hover:shadow-xl bg-white/95 backdrop-blur-md transition-all duration-300">
-                        <CardHeader className="pb-4">
-                            <CardTitle className="text-base sm:text-lg font-black text-slate-900">Quick Actions</CardTitle>
-                            <CardDescription className="text-[11px] text-slate-500 font-medium">Common administrative tasks</CardDescription>
-                        </CardHeader>
-                        <CardContent className="grid grid-cols-2 gap-3 sm:gap-4">
-                            <Link href="/admin/services" className="touch-target">
-                                <Button className="w-full h-24 sm:h-28 bg-gradient-to-br from-blue-600 via-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 font-bold flex flex-col gap-2 sm:gap-2.5 rounded-2xl shadow-xl shadow-blue-200 hover:shadow-2xl hover:shadow-blue-300 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
-                                    <Wrench className="h-6 w-6 sm:h-7 sm:w-7" />
-                                    <span className="text-xs sm:text-sm font-extrabold">Manage Services</span>
-                                </Button>
-                            </Link>
-                            <Link href="/admin/partners" className="touch-target">
-                                <Button variant="outline" className="w-full h-24 sm:h-28 border-2 border-cyan-200 text-cyan-700 hover:bg-cyan-50 hover:border-cyan-300 font-bold flex flex-col gap-2 sm:gap-2.5 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
-                                    <Users className="h-6 w-6 sm:h-7 sm:w-7" />
-                                    <span className="text-xs sm:text-sm font-extrabold">Add Partner</span>
-                                </Button>
-                            </Link>
-                            <Link href="/admin/bookings" className="touch-target">
-                                <Button variant="outline" className="w-full h-24 sm:h-28 border-2 border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:border-indigo-300 font-bold flex flex-col gap-2 sm:gap-2.5 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
-                                    <Calendar className="h-6 w-6 sm:h-7 sm:w-7" />
-                                    <span className="text-xs sm:text-sm font-extrabold">View Bookings</span>
-                                </Button>
-                            </Link>
-                            <Link href="/" className="touch-target">
-                                <Button variant="outline" className="w-full h-24 sm:h-28 border-2 border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300 font-bold flex flex-col gap-2 sm:gap-2.5 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
-                                    <TrendingUp className="h-6 w-6 sm:h-7 sm:w-7" />
-                                    <span className="text-xs sm:text-sm font-extrabold">Go to Website</span>
-                                </Button>
-                            </Link>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* System Health - Mobile Optimized */}
-                <Card className="border-none shadow-md hover:shadow-xl bg-white/95 backdrop-blur-md transition-all duration-300">
-                    <CardHeader className="pb-4">
-                        <CardTitle className="text-base sm:text-lg font-black text-slate-900">System Health</CardTitle>
-                        <CardDescription className="text-[11px] text-green-600 font-bold flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                            All systems operational
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            <div className="flex items-center gap-3 p-3 sm:p-4 bg-gradient-to-br from-green-50 to-emerald-50/50 rounded-xl border border-green-200 hover:border-green-300 transition-all hover:shadow-md">
-                                <div className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.6)] animate-pulse flex-shrink-0" />
-                                <div className="min-w-0">
-                                    <p className="font-bold text-slate-900 text-xs sm:text-sm">Firestore Database</p>
-                                    <p className="text-[10px] text-green-600 font-extrabold uppercase tracking-wide">Online</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3 p-3 sm:p-4 bg-gradient-to-br from-green-50 to-emerald-50/50 rounded-xl border border-green-200 hover:border-green-300 transition-all hover:shadow-md">
-                                <div className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.6)] animate-pulse flex-shrink-0" />
-                                <div className="min-w-0">
-                                    <p className="font-bold text-slate-900 text-xs sm:text-sm">Authentication</p>
-                                    <p className="text-[10px] text-green-600 font-extrabold uppercase tracking-wide">Online</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3 p-3 sm:p-4 bg-gradient-to-br from-green-50 to-emerald-50/50 rounded-xl border border-green-200 hover:border-green-300 transition-all hover:shadow-md">
-                                <div className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.6)] animate-pulse flex-shrink-0" />
-                                <div className="min-w-0">
-                                    <p className="font-bold text-slate-900 text-xs sm:text-sm">Storage Bucket</p>
-                                    <p className="text-[10px] text-green-600 font-extrabold uppercase tracking-wide">Online</p>
-                                </div>
-                            </div>
+                                </CardContent>
+                            </Card>
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             </div>
         </div>
     );

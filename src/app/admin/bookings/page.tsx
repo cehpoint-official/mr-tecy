@@ -17,7 +17,7 @@ import {
     SelectValue
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Loader2, Download, Eye } from "lucide-react";
+import { Loader2, Download, Eye, Calendar, Clock, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import { bookingService } from "@/services/booking.service";
 import { Booking, BookingStatus } from "@/types";
 import { format } from "date-fns";
@@ -26,6 +26,8 @@ import { FilterBar } from "@/components/admin/FilterBar";
 import { useDebounce } from "@/hooks/useDebounce";
 import { RealtimeIndicator } from "@/components/admin/RealtimeIndicator";
 import { BookingDetailsModal } from "@/components/admin/BookingDetailsModal";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 export default function AdminBookingsPage() {
     const { bookings, loading } = useRealtimeBookings();
@@ -65,166 +67,188 @@ export default function AdminBookingsPage() {
 
     const getStatusColor = (status: BookingStatus) => {
         switch (status) {
-            case 'pending': return 'bg-amber-100 text-amber-700';
-            case 'accepted': return 'bg-blue-100 text-blue-700';
-            case 'in_progress': return 'bg-indigo-100 text-indigo-700';
-            case 'completed': return 'bg-green-100 text-green-700';
-            case 'cancelled': return 'bg-red-100 text-red-700';
-            default: return 'bg-slate-100 text-slate-700';
+            case 'pending': return 'bg-amber-100 text-amber-700 hover:bg-amber-200 border-amber-200';
+            case 'accepted': return 'bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200';
+            case 'in_progress': return 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border-indigo-200';
+            case 'completed': return 'bg-green-100 text-green-700 hover:bg-green-200 border-green-200';
+            case 'cancelled': return 'bg-red-100 text-red-700 hover:bg-red-200 border-red-200';
+            default: return 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-200';
         }
     };
 
+    const stats = [
+        { label: "Total", count: bookings.length, color: "text-slate-700", bg: "bg-slate-50", icon: Calendar },
+        { label: "Pending", count: bookings.filter(b => b.status === 'pending').length, color: "text-amber-600", bg: "bg-amber-50", icon: Clock },
+        { label: "In Progress", count: bookings.filter(b => b.status === 'in_progress').length, color: "text-indigo-600", bg: "bg-indigo-50", icon: Loader2 },
+        { label: "Completed", count: bookings.filter(b => b.status === 'completed').length, color: "text-green-600", bg: "bg-green-50", icon: CheckCircle2 },
+        { label: "Cancelled", count: bookings.filter(b => b.status === 'cancelled').length, color: "text-red-600", bg: "bg-red-50", icon: XCircle },
+    ];
+
     return (
-        <div className="p-6 lg:p-8 max-w-[1600px] mx-auto space-y-6">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold text-slate-900">Bookings Management</h1>
-                    <p className="text-slate-500 mt-1">Track and update all service requests in real-time.</p>
-                </div>
-                <div className="flex items-center gap-3">
-                    <RealtimeIndicator />
-                    <Button variant="outline" className="gap-2">
-                        <Download className="h-4 w-4" />
-                        Export
-                    </Button>
-                </div>
-            </div>
+        <div className="min-h-screen pb-12 overflow-x-hidden">
+            {/* Premium Background Gradient */}
+            <div className="absolute top-0 left-0 right-0 h-[35vh] bg-gradient-to-b from-blue-100/30 via-cyan-50/20 to-transparent pointer-events-none" />
 
-            {/* Filters */}
-            <FilterBar
-                searchValue={searchQuery}
-                onSearchChange={setSearchQuery}
-                statusFilter={statusFilter}
-                onStatusFilterChange={setStatusFilter}
-                paymentFilter={paymentFilter}
-                onPaymentFilterChange={setPaymentFilter}
-            />
-
-            {/* Stats Summary */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                {[
-                    { label: "Total", count: bookings.length, color: "text-slate-700" },
-                    { label: "Pending", count: bookings.filter(b => b.status === 'pending').length, color: "text-amber-600" },
-                    { label: "In Progress", count: bookings.filter(b => b.status === 'in_progress').length, color: "text-indigo-600" },
-                    { label: "Completed", count: bookings.filter(b => b.status === 'completed').length, color: "text-green-600" },
-                    { label: "Cancelled", count: bookings.filter(b => b.status === 'cancelled').length, color: "text-red-600" },
-                ].map((stat) => (
-                    <div key={stat.label} className="p-4 bg-white rounded-lg border border-slate-200">
-                        <p className="text-xs text-slate-500 uppercase font-medium">{stat.label}</p>
-                        <p className={`text-2xl font-bold ${stat.color} mt-1`}>{stat.count}</p>
+            <div className="relative z-10 px-4 sm:px-6 lg:px-8 max-w-[1600px] mx-auto space-y-6 pt-8">
+                {/* Header */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fade-in">
+                    <div>
+                        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Bookings</h1>
+                        <p className="text-slate-500 mt-1 font-medium">Track and manage service requests.</p>
                     </div>
-                ))}
-            </div>
+                    <div className="flex items-center gap-3">
+                        <RealtimeIndicator />
+                        <Button variant="outline" className="gap-2 bg-white/80 backdrop-blur-sm border-slate-200 hover:bg-white shadow-sm font-bold">
+                            <Download className="h-4 w-4" />
+                            Export CSV
+                        </Button>
+                    </div>
+                </div>
 
-            {/* Table */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <Table>
-                        <TableHeader className="bg-slate-50">
-                            <TableRow>
-                                <TableHead className="font-bold">Date</TableHead>
-                                <TableHead className="font-bold">Service</TableHead>
-                                <TableHead className="font-bold">Customer</TableHead>
-                                <TableHead className="font-bold">Price</TableHead>
-                                <TableHead className="font-bold">Payment</TableHead>
-                                <TableHead className="font-bold">Status</TableHead>
-                                <TableHead className="text-right font-bold">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {loading ? (
-                                <TableRow>
-                                    <TableCell colSpan={7} className="text-center py-12">
-                                        <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto" />
-                                    </TableCell>
+                {/* Filter Bar */}
+                <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-sm border border-slate-100 p-1">
+                    <FilterBar
+                        searchValue={searchQuery}
+                        onSearchChange={setSearchQuery}
+                        statusFilter={statusFilter}
+                        onStatusFilterChange={setStatusFilter}
+                        paymentFilter={paymentFilter}
+                        onPaymentFilterChange={setPaymentFilter}
+                    />
+                </div>
+
+                {/* Stats Summary */}
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+                    {stats.map((stat) => (
+                        <Card key={stat.label} className="border-none shadow-sm hover:shadow-md transition-all duration-300 bg-white/90 backdrop-blur">
+                            <CardContent className="p-4 flex flex-col items-center text-center">
+                                <div className={`p-2 rounded-full mb-3 ${stat.bg}`}>
+                                    <stat.icon className={`w-5 h-5 ${stat.color}`} />
+                                </div>
+                                <p className="text-[10px] text-slate-400 uppercase font-extrabold tracking-wider">{stat.label}</p>
+                                <p className={`text-2xl font-black ${stat.color} mt-0.5`}>{stat.count}</p>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+
+                {/* Table */}
+                <Card className="border-none shadow-md bg-white/90 backdrop-blur-md overflow-hidden animate-slide-up" style={{ animationDelay: '0.2s' }}>
+                    <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader className="bg-slate-50/50">
+                                <TableRow className="border-b-slate-100">
+                                    <TableHead className="font-bold text-slate-700">Date & Time</TableHead>
+                                    <TableHead className="font-bold text-slate-700">Service Info</TableHead>
+                                    <TableHead className="font-bold text-slate-700">Customer</TableHead>
+                                    <TableHead className="font-bold text-slate-700">Amount</TableHead>
+                                    <TableHead className="font-bold text-slate-700">Payment</TableHead>
+                                    <TableHead className="font-bold text-slate-700">Status</TableHead>
+                                    <TableHead className="text-right font-bold text-slate-700">Actions</TableHead>
                                 </TableRow>
-                            ) : filteredBookings.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={7} className="text-center py-12 text-slate-400">
-                                        {searchQuery || statusFilter !== "all" || paymentFilter !== "all"
-                                            ? "No bookings match your filters."
-                                            : "No bookings found."}
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                filteredBookings.map((booking) => (
-                                    <TableRow key={booking.id} className="hover:bg-slate-50 transition-colors">
-                                        <TableCell className="text-sm">
-                                            {booking.createdAt ? format(booking.createdAt.toDate(), "MMM dd, hh:mm a") : "Just now"}
+                            </TableHeader>
+                            <TableBody>
+                                {loading ? (
+                                    <TableRow>
+                                        <TableCell colSpan={7} className="text-center py-12">
+                                            <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto" />
                                         </TableCell>
-                                        <TableCell>
-                                            <div className="flex flex-col">
-                                                <span className="font-semibold text-slate-900">{booking.serviceName}</span>
-                                                <span className="text-xs text-slate-400">ID: {booking.id.slice(-8)}</span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <span className="text-sm text-slate-600">{booking.customerId.slice(-8)}</span>
-                                        </TableCell>
-                                        <TableCell className="font-bold text-slate-900">₹{booking.servicePrice}</TableCell>
-                                        <TableCell>
-                                            <div className="flex flex-col gap-1">
-                                                <span className="text-xs text-slate-600">{booking.paymentMethod}</span>
-                                                <span className={`text-xs font-bold uppercase ${booking.paymentStatus === 'paid' ? 'text-green-600' : 'text-amber-600'
-                                                    }`}>
-                                                    {booking.paymentStatus}
-                                                </span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${getStatusColor(booking.status)}`}>
-                                                {booking.status}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => handleViewDetails(booking)}
-                                                    className="h-8 w-8 p-0"
-                                                >
-                                                    <Eye className="h-4 w-4" />
-                                                </Button>
-                                                <Select
-                                                    value={booking.status}
-                                                    onValueChange={(val: BookingStatus) => handleStatusChange(booking.id, val)}
-                                                >
-                                                    <SelectTrigger className="w-[140px] h-8 text-xs font-semibold">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent className="z-[100]">
-                                                        <SelectItem value="pending">Pending</SelectItem>
-                                                        <SelectItem value="accepted">Accepted</SelectItem>
-                                                        <SelectItem value="in_progress">In Progress</SelectItem>
-                                                        <SelectItem value="completed">Completed</SelectItem>
-                                                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
+                                    </TableRow>
+                                ) : filteredBookings.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={7} className="text-center py-16 text-slate-400">
+                                            <div className="flex flex-col items-center justify-center">
+                                                <AlertCircle className="w-10 h-10 mb-2 opacity-20" />
+                                                <p className="font-medium">No bookings found</p>
+                                                <p className="text-xs mt-1">Try adjusting your filters</p>
                                             </div>
                                         </TableCell>
                                     </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                </div>
+                                ) : (
+                                    filteredBookings.map((booking) => (
+                                        <TableRow key={booking.id} className="hover:bg-blue-50/30 transition-colors border-b-slate-50">
+                                            <TableCell className="text-sm font-medium text-slate-600">
+                                                {booking.createdAt ? format(booking.createdAt.toDate(), "MMM dd, hh:mm a") : "Just now"}
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-col">
+                                                    <span className="font-bold text-slate-900">{booking.serviceName}</span>
+                                                    <span className="text-[10px] text-slate-400 font-mono">#{booking.id.slice(-6).toUpperCase()}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-600">
+                                                        {booking.customerId.slice(-2)}
+                                                    </div>
+                                                    <span className="text-sm font-medium text-slate-700">Customer</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <span className="font-black text-slate-900">₹{booking.servicePrice}</span>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="text-xs text-slate-500 font-medium">{booking.paymentMethod}</span>
+                                                    <Badge variant="outline" className={`w-fit text-[10px] px-1.5 py-0 h-5 border-none ${booking.paymentStatus === 'paid' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                                                        {booking.paymentStatus}
+                                                    </Badge>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge className={`border px-2.5 py-0.5 rounded-full font-bold shadow-none ${getStatusColor(booking.status)}`}>
+                                                    {booking.status.replace('_', ' ')}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => handleViewDetails(booking)}
+                                                        className="h-8 w-8 p-0 text-slate-500 hover:text-blue-600 hover:bg-blue-50"
+                                                    >
+                                                        <Eye className="h-4 w-4" />
+                                                    </Button>
+                                                    <Select
+                                                        value={booking.status}
+                                                        onValueChange={(val: BookingStatus) => handleStatusChange(booking.id, val)}
+                                                    >
+                                                        <SelectTrigger className="w-[130px] h-8 text-xs font-bold border-slate-200 bg-white shadow-sm">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent className="z-[100]">
+                                                            <SelectItem value="pending">Pending</SelectItem>
+                                                            <SelectItem value="accepted">Accepted</SelectItem>
+                                                            <SelectItem value="in_progress">In Progress</SelectItem>
+                                                            <SelectItem value="completed">Completed</SelectItem>
+                                                            <SelectItem value="cancelled">Cancelled</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </Card>
+
+                {/* Results Count */}
+                {!loading && filteredBookings.length > 0 && (
+                    <p className="text-xs text-slate-400 text-center font-medium">
+                        Showing {filteredBookings.length} of {bookings.length} bookings
+                    </p>
+                )}
+
+                {/* Booking Details Modal */}
+                <BookingDetailsModal
+                    booking={selectedBooking}
+                    open={modalOpen}
+                    onOpenChange={setModalOpen}
+                />
             </div>
-
-            {/* Results Count */}
-            {!loading && filteredBookings.length > 0 && (
-                <p className="text-sm text-slate-500 text-center">
-                    Showing {filteredBookings.length} of {bookings.length} bookings
-                </p>
-            )}
-
-            {/* Booking Details Modal */}
-            <BookingDetailsModal
-                booking={selectedBooking}
-                open={modalOpen}
-                onOpenChange={setModalOpen}
-            />
         </div>
     );
 }
