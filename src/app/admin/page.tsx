@@ -437,7 +437,7 @@ export default function AdminDashboard() {
                     <CardHeader className="pb-4">
                         <CardTitle className="text-base sm:text-lg font-black text-slate-900">System Health</CardTitle>
                         <CardDescription className="text-[11px] text-green-600 font-bold flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                             All systems operational
                         </CardDescription>
                     </CardHeader>

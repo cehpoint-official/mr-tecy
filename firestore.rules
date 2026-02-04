@@ -83,9 +83,9 @@ service cloud.firestore {
         (resource.data.customerId == request.auth.uid &&
          resource.data.status in ['pending', 'accepted'] &&
          request.resource.data.status == 'cancelled') ||
-        // Partner updating assigned booking status
+        // Partner updating assigned booking status (including cancellation)
         (resource.data.partnerId == request.auth.uid &&
-         request.resource.data.status in ['accepted', 'in_progress', 'completed']) ||
+         request.resource.data.status in ['pending', 'accepted', 'in_progress', 'completed', 'cancelled']) ||
         // Admin can update anything
         isAdmin()
       );

@@ -5,6 +5,7 @@ import { bookingService } from "@/services/booking.service";
 import { Booking, BookingStatus } from "@/types";
 import { useState, useEffect } from "react";
 import { Loader2, Eye, Clock, CheckCircle2 } from "lucide-react";
+import { useToast } from "@/hooks/useToast";
 import {
     Table,
     TableBody,
@@ -27,11 +28,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 export default function PartnerBookingsPage() {
     const { profile } = useAuth();
+    const toast = useToast();
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [loading, setLoading] = useState(true);
     const [statusFilter, setStatusFilter] = useState<BookingStatus | "all">("all");
     const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
     const [modalOpen, setModalOpen] = useState(false);
+    const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
 
     useEffect(() => {
         if (!profile?.uid) return;
@@ -59,10 +62,26 @@ export default function PartnerBookingsPage() {
     });
 
     const handleStatusChange = async (bookingId: string, newStatus: BookingStatus) => {
+        setUpdatingStatus(bookingId);
         try {
             await bookingService.updateBookingStatus(bookingId, newStatus);
-        } catch (error) {
+            toast.success(
+                "Status Updated",
+                `Booking status updated to ${newStatus.replace('_', ' ')}`
+            );
+        } catch (error: any) {
             console.error("Error updating status:", error);
+
+            let errorMessage = "Failed to update booking status";
+            if (error?.code === 'permission-denied') {
+                errorMessage = "You don't have permission to update this booking";
+            } else if (error?.message) {
+                errorMessage = error.message;
+            }
+
+            toast.error("Update Failed", errorMessage);
+        } finally {
+            setUpdatingStatus(null);
         }
     };
 
@@ -216,9 +235,14 @@ export default function PartnerBookingsPage() {
                                                         <Select
                                                             value={booking.status}
                                                             onValueChange={(val: BookingStatus) => handleStatusChange(booking.id, val)}
+                                                            disabled={updatingStatus === booking.id}
                                                         >
                                                             <SelectTrigger className="w-[140px] h-8 text-xs font-bold">
-                                                                <SelectValue />
+                                                                {updatingStatus === booking.id ? (
+                                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                                ) : (
+                                                                    <SelectValue />
+                                                                )}
                                                             </SelectTrigger>
                                                             <SelectContent className="z-[100]">
                                                                 <SelectItem value="pending">Pending</SelectItem>

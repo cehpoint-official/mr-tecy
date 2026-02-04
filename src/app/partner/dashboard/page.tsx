@@ -237,7 +237,7 @@ export default function PartnerDashboard() {
                                                 <div className="flex items-center gap-2 mb-1">
                                                     <p className="font-bold text-slate-900 truncate text-sm sm:text-base">{booking.serviceName}</p>
                                                     <span className={`inline-flex text-[10px] px-2 py-0.5 rounded-full font-extrabold uppercase ${booking.status === 'pending' ? 'bg-amber-100 text-amber-700' :
-                                                            booking.status === 'accepted' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'
+                                                        booking.status === 'accepted' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'
                                                         }`}>
                                                         {booking.status}
                                                     </span>

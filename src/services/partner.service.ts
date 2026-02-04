@@ -163,10 +163,16 @@ export const partnerApplicationService = {
             const partnersWithApps = await Promise.all(
                 partners.map(async (partner) => {
                     const app = await this.getPartnerStatus(partner.uid);
+                    // Merge application data but preserve UserProfile's status field
+                    // PartnerApplication has status: 'pending' | 'approved' | 'rejected'
+                    // UserProfile has status: 'active' | 'suspended'
+                    // We need UserProfile's status to take precedence
+                    const { status: appStatus, ...appWithoutStatus } = app || {} as any;
                     return {
                         ...partner,
-                        ...(app || {})
-                    } as any; // Type assertion needed due to status field overlap
+                        ...appWithoutStatus,
+                        // Preserve UserProfile status (active/suspended) - do NOT overwrite with app status
+                    } as any;
                 })
             );
 

@@ -9,12 +9,13 @@ import { Service, UserProfile, PartnerApplication } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, MapPin, Star, ShieldCheck, ChevronLeft, CreditCard } from "lucide-react";
-import Link from "next/link";
+import { useToast } from "@/hooks/useToast";
 
 export default function BookingPage() {
     const { serviceId } = useParams();
     const router = useRouter();
     const { user, profile } = useAuth();
+    const toast = useToast();
 
     const [service, setService] = useState<Service | null>(null);
     const [partners, setPartners] = useState<Array<UserProfile & Partial<PartnerApplication>>>([]);
@@ -48,8 +49,15 @@ export default function BookingPage() {
             return;
         }
 
+
         if (!user) {
             router.push("/login");
+            return;
+        }
+
+        // Prevent partners from booking their own service
+        if (user.uid === selectedPartner) {
+            toast.error("Action Failed", "You cannot access your own service");
             return;
         }
 
@@ -68,7 +76,26 @@ export default function BookingPage() {
         );
     }
 
-    if (!service) return <div>Service not found</div>;
+    if (!service) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+                <div className="text-center space-y-4">
+                    <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto">
+                        <ShieldCheck className="w-8 h-8 text-red-500" />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold text-slate-900">Service Not Found</h2>
+                        <p className="text-slate-500 mt-1 max-w-xs mx-auto">
+                            The service you are looking for ({serviceId}) does not exist or has been removed.
+                        </p>
+                    </div>
+                    <Button onClick={() => router.push("/")} variant="outline" className="min-w-[140px]">
+                        Go to Home
+                    </Button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 pb-32">
