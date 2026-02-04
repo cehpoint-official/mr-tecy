@@ -158,12 +158,31 @@ export const bookingService = {
     },
 
     // Update Booking Status (Partner/Admin)
-    async updateBookingStatus(bookingId: string, status: BookingStatus) {
+    async updateBookingStatus(bookingId: string, newStatus: BookingStatus) {
         try {
             const bookingRef = doc(db, "bookings", bookingId);
-            const updates: any = { status };
 
-            if (status === 'completed') {
+            // Fetch current booking to validate transition
+            const bookingSnap = await getDoc(bookingRef);
+            if (!bookingSnap.exists()) {
+                throw new Error("Booking not found");
+            }
+
+            const currentBooking = bookingSnap.data() as Booking;
+            const currentStatus = currentBooking.status;
+
+            // Import validation function
+            const { isValidStatusTransition, getTransitionErrorMessage } = await import("@/lib/booking-status");
+
+            // Validate the transition
+            if (!isValidStatusTransition(currentStatus, newStatus)) {
+                const errorMsg = getTransitionErrorMessage(currentStatus, newStatus);
+                throw new Error(errorMsg);
+            }
+
+            const updates: any = { status: newStatus };
+
+            if (newStatus === 'completed') {
                 // Set warranty + 30 days
                 const warrantyDate = new Date();
                 warrantyDate.setDate(warrantyDate.getDate() + 30);

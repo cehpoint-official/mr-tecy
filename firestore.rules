@@ -76,18 +76,33 @@ service cloud.firestore {
         isAdmin()
       );
       
+      // Helper function to validate status transitions
+      function isValidStatusTransition(oldStatus, newStatus) {
+        return (
+          // Same status is allowed (no-op)
+          oldStatus == newStatus ||
+          // Pending can go to accepted or cancelled
+          (oldStatus == 'pending' && newStatus in ['accepted', 'cancelled']) ||
+          // Accepted can go to in_progress or cancelled
+          (oldStatus == 'accepted' && newStatus in ['in_progress', 'cancelled']) ||
+          // In Progress can go to completed or cancelled
+          (oldStatus == 'in_progress' && newStatus in ['completed', 'cancelled'])
+          // Completed and Cancelled are terminal - no transitions allowed
+        );
+      }
+      
       // Customers can cancel their own pending/accepted bookings
-      // Partners/admins can update status
+      // Partners/admins can update status with validation
       allow update: if isAuthenticated() && (
         // Customer cancelling their own booking
         (resource.data.customerId == request.auth.uid &&
          resource.data.status in ['pending', 'accepted'] &&
          request.resource.data.status == 'cancelled') ||
-        // Partner updating assigned booking status (including cancellation)
+        // Partner updating assigned booking status with validation
         (resource.data.partnerId == request.auth.uid &&
-         request.resource.data.status in ['pending', 'accepted', 'in_progress', 'completed', 'cancelled']) ||
-        // Admin can update anything
-        isAdmin()
+         isValidStatusTransition(resource.data.status, request.resource.data.status)) ||
+        // Admin can update with validation
+        (isAdmin() && isValidStatusTransition(resource.data.status, request.resource.data.status))
       );
       
       allow delete: if isAdmin(); // Only admins can delete bookings

@@ -17,7 +17,8 @@ import {
     SelectValue
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Loader2, Download, Eye, Calendar, Clock, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { Loader2, Download, Eye, Calendar, Clock, CheckCircle2, XCircle, AlertCircle, Lock } from "lucide-react";
+import { getStatusDropdownOptions, isStatusLocked } from "@/lib/booking-status";
 import { bookingService } from "@/services/booking.service";
 import { Booking, BookingStatus } from "@/types";
 import { format } from "date-fns";
@@ -210,21 +211,28 @@ export default function AdminBookingsPage() {
                                                     >
                                                         <Eye className="h-4 w-4" />
                                                     </Button>
-                                                    <Select
-                                                        value={booking.status}
-                                                        onValueChange={(val: BookingStatus) => handleStatusChange(booking.id, val)}
-                                                    >
-                                                        <SelectTrigger className="w-[130px] h-8 text-xs font-bold border-slate-200 bg-white shadow-sm">
-                                                            <SelectValue />
-                                                        </SelectTrigger>
-                                                        <SelectContent className="z-[100]">
-                                                            <SelectItem value="pending">Pending</SelectItem>
-                                                            <SelectItem value="accepted">Accepted</SelectItem>
-                                                            <SelectItem value="in_progress">In Progress</SelectItem>
-                                                            <SelectItem value="completed">Completed</SelectItem>
-                                                            <SelectItem value="cancelled">Cancelled</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
+                                                    {isStatusLocked(booking.status) ? (
+                                                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 rounded-md text-xs font-bold text-slate-500">
+                                                            <Lock className="h-3 w-3" />
+                                                            Locked
+                                                        </div>
+                                                    ) : (
+                                                        <Select
+                                                            value={booking.status}
+                                                            onValueChange={(val: BookingStatus) => handleStatusChange(booking.id, val)}
+                                                        >
+                                                            <SelectTrigger className="w-[130px] h-8 text-xs font-bold border-slate-200 bg-white shadow-sm">
+                                                                <SelectValue />
+                                                            </SelectTrigger>
+                                                            <SelectContent className="z-[100]">
+                                                                {getStatusDropdownOptions(booking.status).map((status) => (
+                                                                    <SelectItem key={status} value={status}>
+                                                                        {status === 'in_progress' ? 'In Progress' : status.charAt(0).toUpperCase() + status.slice(1)}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    )}
                                                 </div>
                                             </TableCell>
                                         </TableRow>

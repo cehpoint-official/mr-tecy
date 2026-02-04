@@ -4,8 +4,9 @@ import { useAuth } from "@/context/AuthContext";
 import { bookingService } from "@/services/booking.service";
 import { Booking, BookingStatus } from "@/types";
 import { useState, useEffect } from "react";
-import { Loader2, Eye, Clock, CheckCircle2 } from "lucide-react";
+import { Loader2, Eye, Clock, CheckCircle2, Lock } from "lucide-react";
 import { useToast } from "@/hooks/useToast";
+import { getStatusDropdownOptions, isStatusLocked } from "@/lib/booking-status";
 import {
     Table,
     TableBody,
@@ -232,26 +233,33 @@ export default function PartnerBookingsPage() {
                                                         >
                                                             <Eye className="h-4 w-4 text-green-600" />
                                                         </Button>
-                                                        <Select
-                                                            value={booking.status}
-                                                            onValueChange={(val: BookingStatus) => handleStatusChange(booking.id, val)}
-                                                            disabled={updatingStatus === booking.id}
-                                                        >
-                                                            <SelectTrigger className="w-[140px] h-8 text-xs font-bold">
-                                                                {updatingStatus === booking.id ? (
-                                                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                                                ) : (
-                                                                    <SelectValue />
-                                                                )}
-                                                            </SelectTrigger>
-                                                            <SelectContent className="z-[100]">
-                                                                <SelectItem value="pending">Pending</SelectItem>
-                                                                <SelectItem value="accepted">Accepted</SelectItem>
-                                                                <SelectItem value="in_progress">In Progress</SelectItem>
-                                                                <SelectItem value="completed">Completed</SelectItem>
-                                                                <SelectItem value="cancelled">Cancelled</SelectItem>
-                                                            </SelectContent>
-                                                        </Select>
+                                                        {isStatusLocked(booking.status) ? (
+                                                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 rounded-md text-xs font-bold text-slate-500">
+                                                                <Lock className="h-3 w-3" />
+                                                                Locked
+                                                            </div>
+                                                        ) : (
+                                                            <Select
+                                                                value={booking.status}
+                                                                onValueChange={(val: BookingStatus) => handleStatusChange(booking.id, val)}
+                                                                disabled={updatingStatus === booking.id}
+                                                            >
+                                                                <SelectTrigger className="w-[140px] h-8 text-xs font-bold">
+                                                                    {updatingStatus === booking.id ? (
+                                                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                                                    ) : (
+                                                                        <SelectValue />
+                                                                    )}
+                                                                </SelectTrigger>
+                                                                <SelectContent className="z-[100]">
+                                                                    {getStatusDropdownOptions(booking.status).map((status) => (
+                                                                        <SelectItem key={status} value={status}>
+                                                                            {status === 'in_progress' ? 'In Progress' : status.charAt(0).toUpperCase() + status.slice(1)}
+                                                                        </SelectItem>
+                                                                    ))}
+                                                                </SelectContent>
+                                                            </Select>
+                                                        )}
                                                     </div>
                                                 </TableCell>
                                             </TableRow>

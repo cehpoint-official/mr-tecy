@@ -5,8 +5,8 @@ import { ToastProvider } from "@/providers/ToastProvider";
 import { MobileGuard } from "@/components/MobileGuard";
 
 export const metadata: Metadata = {
-  title: "Mr Tecy - Home Service Booking",
-  description: "Book home service technicians for car, bike, electrical, and mobile repairs",
+  title: "Mr Tecy - On-site Intelligence Assistance",
+  description: "Intelligent on-site assistance to book trusted technicians for vehicle, electrical, and mobile repairs at your doorstep.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

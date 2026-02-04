@@ -10,7 +10,7 @@ import {
     TableRow
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Loader2, Users, CheckCircle2, XCircle, ShieldCheck, ShieldOff, AlertCircle } from "lucide-react";
+import { Loader2, Users, CheckCircle2, XCircle, ShieldCheck, ShieldOff, AlertCircle, Star } from "lucide-react";
 import { partnerApplicationService } from "@/services/partner.service";
 import { userService } from "@/services/user.service";
 import { UserProfile, PartnerApplication } from "@/types";
@@ -79,10 +79,15 @@ export default function PartnersPage() {
     };
 
     // Calculate stats
+    const avgRating = partners.length > 0
+        ? (partners.reduce((sum, p) => sum + (p.rating || 0), 0) / partners.filter(p => p.rating).length || 0).toFixed(1)
+        : "0.0";
+
     const stats = [
         { label: "Total Partners", value: partners.length, icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
         { label: "Active", value: partners.filter(p => (p.status || 'active') === 'active').length, icon: CheckCircle2, color: "text-green-600", bg: "bg-green-50" },
         { label: "Suspended", value: partners.filter(p => p.status === 'suspended').length, icon: XCircle, color: "text-red-600", bg: "bg-red-50" },
+        { label: "Avg Rating", value: avgRating, icon: Star, color: "text-indigo-600", bg: "bg-indigo-50" },
     ];
 
     return (
@@ -105,7 +110,7 @@ export default function PartnersPage() {
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-3 gap-3 sm:gap-4 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 animate-slide-up" style={{ animationDelay: '0.1s' }}>
                     {stats.map((stat) => (
                         <Card key={stat.label} className="border-none shadow-sm hover:shadow-md transition-all duration-300 bg-white/90 backdrop-blur">
                             <CardContent className="p-4 flex items-center justify-between">
@@ -149,9 +154,9 @@ export default function PartnersPage() {
                                         }}
                                         metadata={[
                                             { label: "Phone", value: partner.phone || partner.phoneNumber || 'N/A' },
+                                            { label: "Rating", value: partner.rating ? `★ ${partner.rating.toFixed(1)}` : 'New' },
                                             { label: "Skills", value: partner.skills?.join(', ') || 'N/A' },
-                                            { label: "Service Area", value: partner.serviceArea || 'N/A' },
-                                            { label: "Experience", value: partner.experience ? `${partner.experience} years` : 'N/A' }
+                                            { label: "Service Area", value: partner.serviceArea || 'N/A' }
                                         ]}
                                         actions={[
                                             {
@@ -210,7 +215,9 @@ export default function PartnersPage() {
                                                             </div>
                                                             <div className="flex flex-col">
                                                                 <span className="font-bold text-slate-900">{partner.displayName}</span>
-                                                                <span className="text-xs text-slate-400">Since {new Date().getFullYear()}</span>
+                                                                <span className="text-xs text-slate-400">
+                                                                    {partner.rating ? `★ ${partner.rating.toFixed(1)}` : 'New Partner'}
+                                                                </span>
                                                             </div>
                                                         </div>
                                                     </TableCell>
@@ -225,7 +232,7 @@ export default function PartnersPage() {
                                                             {partner.skills && partner.skills.length > 0 ? (
                                                                 <>
                                                                     {partner.skills.slice(0, 2).map(skill => (
-                                                                        <Badge key={skill} variant="secondary" className="bg-slate-100 text-slate-600 text-[10px] hover:bg-slate-200">
+                                                                        <Badge key={skill} variant="secondary" className="bg-slate-100 text-slate-600 text-[10px] font-medium hover:bg-slate-200">
                                                                             {skill}
                                                                         </Badge>
                                                                     ))}
@@ -246,35 +253,38 @@ export default function PartnersPage() {
                                                         </div>
                                                     </TableCell>
                                                     <TableCell>
-                                                        <Badge
-                                                            variant={isActive ? "default" : "destructive"}
-                                                            className={`font-bold uppercase text-[10px] ${isActive ? 'bg-green-100 text-green-700 hover:bg-green-200' : 'bg-red-100 text-red-700 hover:bg-red-200'} shadow-none`}
-                                                        >
-                                                            {isActive ? 'Active' : 'Suspended'}
-                                                        </Badge>
-                                                    </TableCell>
-                                                    <TableCell className="text-right">
-                                                        <Button
-                                                            variant={isActive ? "ghost" : "default"}
-                                                            size="sm"
+                                                        <button
                                                             onClick={() => isActive ? handleSuspend(partner.uid) : handleActivate(partner.uid)}
                                                             disabled={isProcessing}
-                                                            className={`gap-1.5 font-bold h-8 ${isActive ? 'text-red-600 hover:text-red-700 hover:bg-red-50' : 'bg-green-600 hover:bg-green-700 text-white'}`}
+                                                            className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase transition-all ${isActive
+                                                                ? 'bg-green-100 text-green-700 hover:bg-green-200 ring-1 ring-green-200'
+                                                                : 'bg-red-100 text-red-700 hover:bg-red-200 ring-1 ring-red-200'
+                                                                }`}
                                                         >
-                                                            {isProcessing ? (
-                                                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                                            ) : isActive ? (
-                                                                <>
-                                                                    <ShieldOff className="h-3.5 w-3.5" />
-                                                                    <span className="text-xs">Suspend</span>
-                                                                </>
-                                                            ) : (
-                                                                <>
-                                                                    <ShieldCheck className="h-3.5 w-3.5" />
-                                                                    <span className="text-xs">Activate</span>
-                                                                </>
-                                                            )}
-                                                        </Button>
+                                                            {isProcessing ? '...' : isActive ? 'Active' : 'Suspended'}
+                                                        </button>
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                        <div className="flex items-center justify-end gap-2">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className={`h-8 w-8 p-0 ${isActive
+                                                                    ? "text-slate-500 hover:text-red-600 hover:bg-red-50"
+                                                                    : "text-slate-500 hover:text-green-600 hover:bg-green-50"
+                                                                    }`}
+                                                                onClick={() => isActive ? handleSuspend(partner.uid) : handleActivate(partner.uid)}
+                                                                disabled={isProcessing}
+                                                            >
+                                                                {isProcessing ? (
+                                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                                ) : isActive ? (
+                                                                    <ShieldOff className="h-4 w-4" />
+                                                                ) : (
+                                                                    <ShieldCheck className="h-4 w-4" />
+                                                                )}
+                                                            </Button>
+                                                        </div>
                                                     </TableCell>
                                                 </TableRow>
                                             );
