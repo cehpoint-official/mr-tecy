@@ -32,6 +32,7 @@ import { cloudinaryUploadService } from "@/services/cloudinary-upload.service";
 import { partnerApplicationService } from "@/services/partner.service";
 import { PartnerApplication } from "@/types";
 import { Briefcase } from "lucide-react";
+import { BottomNavigation } from "@/components/BottomNavigation";
 
 export default function ProfilePage() {
     const router = useRouter();
@@ -436,6 +437,9 @@ export default function ProfilePage() {
                 {/* Spacer for bottom nav */}
                 <div className="h-8" />
             </main>
+
+            {/* Bottom Navigation */}
+            <BottomNavigation />
         </div>
     );
 }
