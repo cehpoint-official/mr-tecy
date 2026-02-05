@@ -18,8 +18,11 @@ if (!firebaseConfig.apiKey) {
     console.error("Firebase API Key is missing. Check your .env.local file.");
 }
 
+import { getMessaging } from "firebase/messaging";
+
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 const db = getFirestore(app);
+const messaging = typeof window !== "undefined" ? getMessaging(app) : null;
 
-export { auth, googleProvider, db };
+export { auth, googleProvider, db, messaging };

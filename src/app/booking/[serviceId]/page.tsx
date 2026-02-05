@@ -95,6 +95,28 @@ export default function BookingPage() {
         );
     }
 
+    // Guard: Partners cannot book services (or specific logic as requested)
+    if (profile?.role === 'partner') {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+                <div className="text-center space-y-4">
+                    <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
+                        <ShieldCheck className="w-8 h-8 text-blue-600" />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold text-slate-900">Partner Access Restricted</h2>
+                        <p className="text-slate-500 mt-1 max-w-xs mx-auto">
+                            Partners cannot book services. Please use the Partner Dashboard to manage your requests.
+                        </p>
+                    </div>
+                    <Button onClick={() => router.push("/partner/dashboard")} className="min-w-[140px] bg-[#1a36a4]">
+                        Go to Dashboard
+                    </Button>
+                </div>
+            </div>
+        );
+    }
+
     // Only show "not found" after confirming user is authenticated
     if (!service) {
         return (

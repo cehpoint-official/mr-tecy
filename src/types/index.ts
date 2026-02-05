@@ -30,6 +30,7 @@ export interface UserProfile {
     bio?: string;
     availability?: 'online' | 'offline';
     priceMultiplier?: number;
+    fcmTokens?: string[];
 }
 
 // Partner is now a Resource, not a User
@@ -115,5 +116,18 @@ export interface Review {
     partnerName: string; // Denormalized
     rating: number; // 1-5 stars
     feedback: string; // Customer comment
+    createdAt: Timestamp;
+}
+
+export type NotificationType = 'info' | 'success' | 'warning' | 'error' | 'booking_update' | 'promotion';
+
+export interface Notification {
+    id: string;
+    userId: string;
+    title: string;
+    message: string;
+    type: NotificationType;
+    read: boolean;
+    link?: string;
     createdAt: Timestamp;
 }

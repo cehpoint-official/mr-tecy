@@ -22,21 +22,32 @@ service cloud.firestore {
 
     // ===== User Collection =====
     
+    // ===== User Collection =====
+    
     match /user/{userId} {
-      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow read: if isAuthenticated() && (
+        isOwner(userId) || 
+        isAdmin() || 
+        resource.data.role == 'partner'
+      );
       allow create: if isAuthenticated() && isOwner(userId);
       
       // Admin can update any user, users can update themselves
       // BUT users cannot change their own role or status (security critical)
       allow update: if isAuthenticated() && (
         (isOwner(userId) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'status'])) ||
-        isAdmin()
+        isAdmin() ||
+        // Allow updating rating and reviewCount (for review system)
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating', 'reviewCount'])
       );
       
       allow delete: if isAdmin();
       
-      // Allow admins to list/query all users
-      allow list: if isAdmin();
+      // Allow admins to list/query all users. 
+      // Also allow querying for partners (since we allow reading individual partner docs)
+      allow list: if isAdmin() || (
+        isAuthenticated() && resource.data.role == 'partner'
+      );
     }
 
     // ===== Users Collection (plural) =====
@@ -102,7 +113,11 @@ service cloud.firestore {
         (resource.data.partnerId == request.auth.uid &&
          isValidStatusTransition(resource.data.status, request.resource.data.status)) ||
         // Admin can update with validation
-        (isAdmin() && isValidStatusTransition(resource.data.status, request.resource.data.status))
+        (isAdmin() && isValidStatusTransition(resource.data.status, request.resource.data.status)) ||
+        // Allow customer to mark booking as reviewed
+        (resource.data.customerId == request.auth.uid &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reviewed']) &&
+         request.resource.data.reviewed == true)
       );
       
       allow delete: if isAdmin(); // Only admins can delete bookings
@@ -145,10 +160,9 @@ service cloud.firestore {
                          'skills', 'serviceArea', 'experience', 'status'
                        ]);
       
-      // Users can read their own application, admins can read all
-      // CRITICAL: Check if document exists first before accessing resource.data
-      allow read: if isAuthenticated() && 
-                     (applicationId == request.auth.uid || isAdmin());
+      // Users can read their own application, admins can read all, 
+      // AND customers can read to see partner details
+      allow read: if isAuthenticated();
       
       // ONLY admins can update applications (prevent users from changing status)
       allow update: if isAdmin();
@@ -165,8 +179,8 @@ service cloud.firestore {
       allow read: if isAuthenticated() && 
                      resource.data.userId == request.auth.uid;
       
-      // System/admins create notifications (users don't create their own)
-      allow create: if isAdmin();
+      // System/admins create notifications, but also users trigger them for others (e.g. booking request)
+      allow create: if isAuthenticated();
       
       // Users can mark their own notifications as read
       allow update: if isAuthenticated() && 

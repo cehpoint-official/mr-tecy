@@ -2,16 +2,44 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, ClipboardList, Plus, User, Bell, History } from "lucide-react"
+import { Home, Plus, User, Bell, History, LayoutDashboard } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useAuth } from "@/context/AuthContext"
+import { useEffect, useState } from "react"
+import { notificationService } from "@/services/notification.service"
 
 export function BottomNavigation() {
     const pathname = usePathname()
+    const { profile, user } = useAuth()
+    const [unreadCount, setUnreadCount] = useState(0)
+
+    useEffect(() => {
+        if (!user) {
+            setUnreadCount(0)
+            return
+        }
+
+        const unsubscribe = notificationService.subscribeToNotifications(user.uid, (notifications) => {
+            const count = notifications.filter(n => !n.read).length
+            setUnreadCount(count)
+        })
+
+        return () => unsubscribe()
+    }, [user])
+
+    const isPartner = profile?.role === "partner"
 
     const navItems = [
         { href: "/", icon: Home, label: "Home" },
-        { href: "/notifications", icon: Bell, label: "Notification" },
-        { href: "/services", icon: Plus, label: "Book Now", isFloating: true },
+        {
+            href: "/notifications",
+            icon: Bell,
+            label: "Notification",
+            badge: unreadCount > 0 ? unreadCount : undefined
+        },
+        isPartner
+            ? { href: "/partner/dashboard", icon: LayoutDashboard, label: "Dashboard", isFloating: true }
+            : { href: "/services", icon: Plus, label: "Book Now", isFloating: true },
         { href: "/history", icon: History, label: "History" },
         { href: "/profile", icon: User, label: "Account" },
     ]
@@ -48,14 +76,21 @@ export function BottomNavigation() {
                                 key={item.href}
                                 href={item.href}
                                 className={cn(
-                                    "flex flex-col items-center gap-0.5 transition-opacity",
+                                    "flex flex-col items-center gap-0.5 transition-opacity relative",
                                     isActive ? "opacity-100" : "opacity-70 hover:opacity-100"
                                 )}
                             >
-                                <Icon
-                                    className="w-5 h-5 text-white"
-                                    strokeWidth={2}
-                                />
+                                <div className="relative">
+                                    <Icon
+                                        className="w-5 h-5 text-white"
+                                        strokeWidth={2}
+                                    />
+                                    {item.badge && (
+                                        <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white ring-2 ring-[#1a36a4]">
+                                            {item.badge > 9 ? "9+" : item.badge}
+                                        </span>
+                                    )}
+                                </div>
                                 <span className="text-[10px] font-medium text-white">{item.label}</span>
                             </Link>
                         )

@@ -30,6 +30,22 @@ export const bookingService = {
                 createdAt: serverTimestamp()
             };
             const docRef = await addDoc(bookingsRef, newBooking);
+
+            // Notify Partner
+            try {
+                // Import dynamically to avoid circular dependencies if any
+                const { notificationService } = await import("@/services/notification.service");
+                await notificationService.createNotification({
+                    userId: bookingData.partnerId,
+                    title: "New Booking Request",
+                    message: `You have a new booking request from ${bookingData.customerName} for ${bookingData.serviceName}`,
+                    type: "info",
+                    link: "/partner/dashboard"
+                });
+            } catch (err) {
+                console.error("Failed to send notification to partner:", err);
+            }
+
             return { id: docRef.id, ...newBooking };
         } catch (error) {
             console.error("Error creating booking:", error);
@@ -191,6 +207,38 @@ export const bookingService = {
             }
 
             await updateDoc(bookingRef, updates);
+
+            // Notify Customer about status update
+            try {
+                const { notificationService } = await import("@/services/notification.service");
+                let message = `Your booking for ${currentBooking.serviceName} is now ${newStatus}.`;
+                let title = "Booking Update";
+
+                if (newStatus === 'accepted') {
+                    title = "Booking Accepted";
+                    message = `${currentBooking.partnerName} accepted your booking for ${currentBooking.serviceName}.`;
+                } else if (newStatus === 'in_progress') {
+                    title = "Service Started";
+                    message = `${currentBooking.partnerName} has started working on your service.`;
+                } else if (newStatus === 'completed') {
+                    title = "Service Completed";
+                    message = `Your service for ${currentBooking.serviceName} is completed. Please rate your experience!`;
+                } else if (newStatus === 'cancelled') {
+                    title = "Booking Cancelled";
+                    message = `Your booking for ${currentBooking.serviceName} has been cancelled.`;
+                }
+
+                await notificationService.createNotification({
+                    userId: currentBooking.customerId,
+                    title: title,
+                    message: message,
+                    type: "booking_update",
+                    link: "/history"
+                });
+            } catch (err) {
+                console.error("Failed to send notification to customer:", err);
+            }
+
         } catch (error) {
             console.error("Error updating booking status:", error);
             throw error;
