@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { Logo } from "@/components/Logo";
 
 interface PartnerSidebarProps {
     className?: string;
@@ -56,12 +57,12 @@ export function PartnerSidebar({ className, isOpen, onClose }: PartnerSidebarPro
                         {/* Header */}
                         <div className="p-4 border-b flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-600 to-emerald-600 flex items-center justify-center">
-                                    <span className="text-white font-bold text-sm">MT</span>
-                                </div>
-                                <div>
-                                    <h2 className="font-bold text-sm text-slate-900">Mr Techy</h2>
-                                    <p className="text-xs text-slate-500">Partner Panel</p>
+                                <div className="flex items-center gap-2">
+                                    <Logo showText={false} />
+                                    <div>
+                                        <span className="font-bold text-lg text-[#1e40af] tracking-tight leading-none block">mrtecy</span>
+                                        <p className="text-xs text-slate-500 font-medium">Partner Panel</p>
+                                    </div>
                                 </div>
                             </div>
                             <Button
@@ -131,12 +132,12 @@ export function PartnerSidebar({ className, isOpen, onClose }: PartnerSidebarPro
             <div className="p-4 border-b flex items-center justify-between">
                 {!collapsed && (
                     <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-600 to-emerald-600 flex items-center justify-center">
-                            <span className="text-white font-bold text-sm">MT</span>
-                        </div>
-                        <div>
-                            <h2 className="font-bold text-sm text-slate-900">Mr Techy</h2>
-                            <p className="text-xs text-slate-500">Partner Panel</p>
+                        <div className="flex items-center gap-2">
+                            <Logo showText={false} />
+                            <div>
+                                <span className="font-bold text-lg text-[#1e40af] tracking-tight leading-none block">mrtecy</span>
+                                <p className="text-xs text-slate-500 font-medium">Partner Panel</p>
+                            </div>
                         </div>
                     </div>
                 )}

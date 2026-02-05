@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { AlertCircle, Loader2 } from "lucide-react";
+import { Logo } from "@/components/Logo";
 
 export default function RegisterPage() {
     const [name, setName] = useState("");
@@ -53,11 +54,8 @@ export default function RegisterPage() {
 
             <div className="w-full max-w-md relative z-10">
                 <div className="flex justify-center mb-8">
-                    <div className="flex items-center gap-3 bg-white/50 backdrop-blur-sm p-3 rounded-2xl shadow-sm">
-                        <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center transform rotate-3 shadow-md">
-                            <div className="w-5 h-5 bg-white transform rotate-45"></div>
-                        </div>
-                        <h1 className="text-2xl font-bold text-slate-950 tracking-tight">Mr tecy</h1>
+                    <div className="flex items-center justify-center p-2">
+                        <Logo className="scale-150 origin-center" />
                     </div>
                 </div>
 

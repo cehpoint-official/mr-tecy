@@ -7,6 +7,7 @@ import { CategoryCard } from "@/components/CategoryCard"
 import { ServiceCard } from "@/components/ServiceCard"
 import { BottomNavigation } from "@/components/BottomNavigation"
 import { Button } from "@/components/ui/button"
+import { Logo } from "@/components/Logo"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -78,10 +79,9 @@ export default function HomePage() {
         <div className="max-w-md mx-auto space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center transform rotate-3 shadow-sm">
-                <div className="w-4 h-4 bg-white transform rotate-45"></div>
+              <div className="flex items-center gap-2">
+                <Logo />
               </div>
-              <h1 className="text-xl font-bold text-slate-950 tracking-tight">Mr tecy</h1>
             </div>
             <div className="flex items-center gap-2">
               {profile?.role === 'admin' && (

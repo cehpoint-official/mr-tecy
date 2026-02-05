@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { Logo } from "@/components/Logo";
 
 interface SidebarProps {
     className?: string;
@@ -59,12 +60,12 @@ export function Sidebar({ className, isOpen, onClose }: SidebarProps) {
                         {/* Header */}
                         <div className="p-4 border-b flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center">
-                                    <span className="text-white font-bold text-sm">MT</span>
-                                </div>
-                                <div>
-                                    <h2 className="font-bold text-sm text-slate-900">Mr Techy</h2>
-                                    <p className="text-xs text-slate-500">Admin Panel</p>
+                                <div className="flex items-center gap-2">
+                                    <Logo showText={false} />
+                                    <div>
+                                        <span className="font-bold text-lg text-[#1e40af] tracking-tight leading-none block">mrtecy</span>
+                                        <p className="text-xs text-slate-500 font-medium">Admin Panel</p>
+                                    </div>
                                 </div>
                             </div>
                             <Button
@@ -134,12 +135,12 @@ export function Sidebar({ className, isOpen, onClose }: SidebarProps) {
             <div className="p-4 border-b flex items-center justify-between">
                 {!collapsed && (
                     <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center">
-                            <span className="text-white font-bold text-sm">MT</span>
-                        </div>
-                        <div>
-                            <h2 className="font-bold text-sm text-slate-900">Mr Techy</h2>
-                            <p className="text-xs text-slate-500">Admin Panel</p>
+                        <div className="flex items-center gap-2">
+                            <Logo showText={false} />
+                            <div>
+                                <span className="font-bold text-lg text-[#1e40af] tracking-tight leading-none block">mrtecy</span>
+                                <p className="text-xs text-slate-500 font-medium">Admin Panel</p>
+                            </div>
                         </div>
                     </div>
                 )}
