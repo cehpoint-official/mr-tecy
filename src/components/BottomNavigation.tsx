@@ -45,9 +45,9 @@ export function BottomNavigation() {
     ]
 
     return (
-        <nav className="fixed bottom-6 left-0 right-0 z-50 px-4">
-            <div className="max-w-md mx-auto bg-[#1a36a4] rounded-full shadow-2xl">
-                <div className="grid grid-cols-5 items-center h-14 px-2 relative">
+  <nav className="fixed bottom-0 left-0 right-0 z-50">
+            <div className="max-w-md mx-auto bg-[#1a36a4] rounded-t-3xl shadow-2xl">
+                <div className="grid grid-cols-5 items-center h-16 px-4 relative">
                     {navItems.map((item) => {
                         const isActive = pathname === item.href
                         const Icon = item.icon
