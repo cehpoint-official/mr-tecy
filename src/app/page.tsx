@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react"
-import { Wrench, LogOut, User, LayoutDashboard, Search } from "lucide-react"
+import { LogOut, User, LayoutDashboard, Search } from "lucide-react"
 import { SearchBar } from "@/components/SearchBar"
 import { CategoryCard } from "@/components/CategoryCard"
 import { ServiceCard } from "@/components/ServiceCard"
@@ -92,14 +92,6 @@ export default function HomePage() {
                   </Button>
                 </Link>
               )}
-              {profile?.role === 'partner' && (
-                <Link href="/partner/dashboard">
-                  <Button variant="outline" size="sm" className="h-9 border-green-200 text-green-700 font-extrabold bg-green-50/50 hover:bg-green-100 rounded-full px-4 flex items-center gap-1.5 shadow-sm">
-                    <Wrench className="w-4 h-4" />
-                    PARTNER
-                  </Button>
-                </Link>
-              )}
               {!authLoading && (
                 user ? (
                   <DropdownMenu>
@@ -124,11 +116,6 @@ export default function HomePage() {
                               Admin Account
                             </span>
                           )}
-                          {profile?.role === 'partner' && (
-                            <span className="text-[10px] items-center bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-bold w-fit mt-1 uppercase">
-                              Partner Account
-                            </span>
-                          )}
                         </div>
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
@@ -137,14 +124,6 @@ export default function HomePage() {
                           <DropdownMenuItem className="cursor-pointer font-bold text-blue-600">
                             <LayoutDashboard className="mr-2 h-4 w-4" />
                             <span>Admin Dashboard</span>
-                          </DropdownMenuItem>
-                        </Link>
-                      )}
-                      {profile?.role === 'partner' && (
-                        <Link href="/partner/dashboard">
-                          <DropdownMenuItem className="cursor-pointer font-bold text-green-600">
-                            <Wrench className="mr-2 h-4 w-4" />
-                            <span>Partner Dashboard</span>
                           </DropdownMenuItem>
                         </Link>
                       )}
@@ -306,7 +285,7 @@ export default function HomePage() {
                 ) : (
                   <div className="col-span-2 text-center py-16 bg-white rounded-3xl border-2 border-dashed border-slate-100 p-8 shadow-sm">
                     <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Wrench className="w-8 h-8 text-blue-300" />
+                      <Search className="w-8 h-8 text-blue-300" />
                     </div>
                     <h3 className="text-lg font-bold text-slate-900 mb-1">No services yet</h3>
                     <p className="text-slate-500 text-sm max-w-[200px] mx-auto leading-relaxed">

@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Plus, User, Bell, History, LayoutDashboard } from "lucide-react"
+import { Home, Plus, User, Bell, History } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/context/AuthContext"
 import { useEffect, useState } from "react"
@@ -27,8 +27,6 @@ export function BottomNavigation() {
         return () => unsubscribe()
     }, [user])
 
-    const isPartner = profile?.role === "partner"
-
     const navItems = [
         { href: "/", icon: Home, label: "Home" },
         {
@@ -37,15 +35,13 @@ export function BottomNavigation() {
             label: "Notification",
             badge: unreadCount > 0 ? unreadCount : undefined
         },
-        isPartner
-            ? { href: "/partner/dashboard", icon: LayoutDashboard, label: "Dashboard", isFloating: true }
-            : { href: "/services", icon: Plus, label: "Book Now", isFloating: true },
+        { href: "/services", icon: Plus, label: "Book Now", isFloating: true },
         { href: "/history", icon: History, label: "History" },
         { href: "/profile", icon: User, label: "Account" },
     ]
 
     return (
-  <nav className="fixed bottom-0 left-0 right-0 z-50">
+        <nav className="fixed bottom-0 left-0 right-0 z-50">
             <div className="max-w-md mx-auto bg-[#1a36a4] rounded-t-3xl shadow-2xl">
                 <div className="grid grid-cols-5 items-center h-16 px-4 relative">
                     {navItems.map((item) => {

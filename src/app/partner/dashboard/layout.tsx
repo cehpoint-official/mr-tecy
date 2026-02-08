@@ -26,7 +26,7 @@ export default function PartnerDashboardLayout({
 
     useEffect(() => {
         if (!loading && (!profile || profile.role !== 'partner')) {
-            router.push('/');
+            router.replace('/');
         }
     }, [loading, profile, router]);
 

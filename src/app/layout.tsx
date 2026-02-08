@@ -3,6 +3,7 @@ import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { ToastProvider } from "@/providers/ToastProvider";
 import { MobileGuard } from "@/components/MobileGuard";
+import "@/lib/suppress-errors";
 
 export const metadata: Metadata = {
   title: "Mr Tecy - On-site Intelligence Assistance",
