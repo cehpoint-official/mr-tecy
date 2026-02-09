@@ -32,22 +32,40 @@ const getServiceAccount = () => {
 
 const serviceAccount = getServiceAccount();
 
-let app: App;
+let app: App | undefined;
 
+// Only initialize if we're not in build mode or if credentials are available
 if (!getApps().length) {
     if (!serviceAccount) {
-        throw new Error(
-            "Firebase Service Account is missing. " +
-            "Please ensure firebase-service-account-key.json exists in the root or FIREBASE_SERVICE_ACCOUNT_KEY is set."
-        );
+        // During build, we may not have credentials - only throw at runtime
+        if (process.env.NODE_ENV === 'production' && typeof window === 'undefined') {
+            // We're in production server, credentials are required
+            console.warn(
+                "Firebase Service Account is missing during build. " +
+                "This is expected during build time. " +
+                "Make sure FIREBASE_SERVICE_ACCOUNT_KEY is set in production environment."
+            );
+        }
+    } else {
+        app = initializeApp({
+            credential: cert(serviceAccount),
+        });
     }
-
-    app = initializeApp({
-        credential: cert(serviceAccount),
-    });
 } else {
     app = getApp();
 }
 
-export const adminDb = getFirestore(app);
-export const adminAuth = getAuth(app);
+// Helper to get app or throw meaningful error
+const getAppOrThrow = (): App => {
+    if (!app) {
+        throw new Error(
+            "Firebase Admin is not initialized. " +
+            "Please ensure firebase-service-account-key.json exists in the root or FIREBASE_SERVICE_ACCOUNT_KEY is set."
+        );
+    }
+    return app;
+};
+
+export const adminDb = app ? getFirestore(app) : {} as any;
+export const adminAuth = app ? getAuth(app) : {} as any;
+

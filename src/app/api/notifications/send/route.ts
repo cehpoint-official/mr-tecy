@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase-admin";
 import { getMessaging } from "firebase-admin/messaging";
 
+// Force dynamic rendering - don't pre-render during build
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: Request) {
     try {
         const { userId, title, message, link } = await request.json();
