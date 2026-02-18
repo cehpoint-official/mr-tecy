@@ -208,7 +208,7 @@ export default function PartnerBookingsPage() {
                                                 <TableCell>
                                                     <span className="text-sm text-slate-600">{booking.customerId.slice(-8)}</span>
                                                 </TableCell>
-                                                <TableCell className="font-black text-slate-900">₹{booking.servicePrice}</TableCell>
+                                                <TableCell className="font-black text-slate-900">₹{booking.totalAmount || booking.servicePrice}</TableCell>
                                                 <TableCell>
                                                     <div className="flex flex-col gap-1">
                                                         <span className="text-xs text-slate-600">{booking.paymentMethod}</span>

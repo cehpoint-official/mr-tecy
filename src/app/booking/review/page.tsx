@@ -62,11 +62,23 @@ export default function BookingReviewPage() {
 
             if (isNewFlow) {
                 // New multi-service flow: create separate bookings for each service
+                // Calculate total base price to derive distance charge
+                const totalBasePrice = bookingData.services.reduce((acc: number, s: any) =>
+                    acc + (s.price * s.quantity * (bookingData.priceMultiplier || 1)), 0
+                );
+
+                // Distance charge is the difference between the session total (which has distance) and base price
+                // Distance charge is the difference between the session total (which has distance) and base price
+                const distanceCharge = Math.max(0, Math.round(Number(bookingData.totalAmount) - Number(totalBasePrice)));
+
                 const bookings = [];
-                for (const service of bookingData.services) {
-                    const finalPrice = Math.round(
-                        service.price * service.quantity * (bookingData.priceMultiplier || 1)
+                for (const [index, service] of bookingData.services.entries()) {
+                    const servicePrice = Math.round(
+                        Number(service.price) * Number(service.quantity) * (Number(bookingData.priceMultiplier) || 1)
                     );
+
+                    // Add distance charge to the first booking only
+                    const bookingTotal = index === 0 ? (servicePrice + distanceCharge) : servicePrice;
 
                     const booking = await bookingService.createBooking({
                         customerId: user.uid,
@@ -75,7 +87,7 @@ export default function BookingReviewPage() {
                         partnerName: bookingData.partnerName,
                         serviceId: service.id,
                         serviceName: `${service.name} x${service.quantity}`,
-                        servicePrice: finalPrice,
+                        servicePrice: servicePrice,
                         type: bookingData.bookingType || "instant",
                         scheduledTime: new Date(bookingData.scheduledTime) as any,
                         location: bookingData.address,
@@ -83,7 +95,7 @@ export default function BookingReviewPage() {
                         notes: bookingData.notes || "",
                         images: bookingData.images || [],
                         paymentMethod: "COD",
-                        totalAmount: finalPrice,
+                        totalAmount: Number(bookingTotal),
                     });
                     bookings.push(booking);
                 }

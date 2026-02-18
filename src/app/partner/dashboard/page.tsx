@@ -63,7 +63,7 @@ export default function PartnerDashboard() {
         pending: bookings.filter(b => b.status === 'pending').length,
         inProgress: bookings.filter(b => b.status === 'in_progress').length,
         completed: bookings.filter(b => b.status === 'completed').length,
-        totalRevenue: bookings.filter(b => b.status === 'completed').reduce((sum, b) => sum + b.servicePrice, 0),
+        totalRevenue: bookings.filter(b => b.status === 'completed').reduce((sum, b) => sum + (b.totalAmount || b.servicePrice), 0),
         avgRating: profile?.rating || 0,
         totalReviews: reviews.length,
     };
@@ -276,7 +276,7 @@ export default function PartnerDashboard() {
                                                 </p>
                                             </div>
                                             <div className="text-right ml-3 flex-shrink-0">
-                                                <p className="font-black text-slate-900 text-base sm:text-lg">₹{booking.servicePrice}</p>
+                                                <p className="font-black text-slate-900 text-base sm:text-lg">₹{booking.totalAmount || booking.servicePrice}</p>
                                             </div>
                                         </div>
                                     ))}

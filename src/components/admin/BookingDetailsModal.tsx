@@ -78,7 +78,7 @@ export function BookingDetailsModal({ booking, open, onOpenChange, partnerLocati
                                 <h3 className="font-bold text-lg text-slate-900">{booking.serviceName}</h3>
                                 <p className="text-sm text-slate-600 mt-1">Service ID: {booking.serviceId.slice(-8)}</p>
                                 <div className="mt-3 flex items-center gap-2">
-                                    <span className="text-2xl font-bold text-blue-600">₹{booking.servicePrice}</span>
+                                    <span className="text-2xl font-bold text-blue-600">₹{booking.totalAmount || booking.servicePrice}</span>
                                     <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${booking.paymentStatus === 'paid'
                                         ? 'bg-green-100 text-green-700'
                                         : 'bg-amber-100 text-amber-700'
@@ -86,6 +86,11 @@ export function BookingDetailsModal({ booking, open, onOpenChange, partnerLocati
                                         {booking.paymentStatus}
                                     </span>
                                 </div>
+                                {(booking.totalAmount > booking.servicePrice) && (
+                                    <p className="text-xs text-slate-500 mt-1">
+                                        Includes distance charges
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </div>

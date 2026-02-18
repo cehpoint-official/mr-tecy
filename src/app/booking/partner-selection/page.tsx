@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { partnerMatchingService } from "@/services/partner-matching.service";
@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, Star, ShieldCheck, ChevronLeft, User, Wrench, AlertCircle, Info, DollarSign, ChevronDown, ChevronUp, X, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/useToast";
 import { cn } from "@/lib/utils";
-import { calculateBookingEndTime, parseTimeSlot } from "@/utils/time-overlap.util";
+import { calculateBookingEndTime } from "@/utils/time-overlap.util";
 import { calculateDistance, formatDistance, calculateDistanceCharge } from "@/utils/distance.util";
 
 interface BookingData {
@@ -129,19 +129,20 @@ export default function PartnerSelectionPage() {
     // Helper functions
     const isPartnerBusy = (partnerId: string) => unavailablePartners.includes(partnerId);
 
-    const getPriceIndicator = (multiplier: number = 1, isSelfDrop: boolean = false) => {
+    const getPriceIndicator = (distance: number, isSelfDrop: boolean = false) => {
         if (isSelfDrop) return ''; // No distance charge for self drop mode
-        if (multiplier <= 1.0) return '$';
-        if (multiplier <= 1.5) return '$$';
+        if (distance <= 5) return '$';
+        if (distance <= 15) return '$$';
         return '$$$';
     };
 
     const calculateFinalPrice = (
         baseAmount: number,
-        partner: UserProfile,
+        partnerMultiplier: number,
+        distance: number,
         isFromAdditionalSection: boolean = false
     ) => {
-        let finalPrice = baseAmount * (partner.priceMultiplier || 1);
+        let finalPrice = baseAmount * (partnerMultiplier || 1);
 
         // Apply 20% additional charge for "More Available Partners" section
         if (isFromAdditionalSection) {
@@ -149,19 +150,31 @@ export default function PartnerSelectionPage() {
         }
 
         // Distance Charge logic
-        if (!bookingData?.selfDropMode && partner.location && bookingData?.location) {
-            const dist = calculateDistance(
-                bookingData.location.lat,
-                bookingData.location.lng,
-                partner.location.lat,
-                partner.location.lng
-            );
-            const charge = calculateDistanceCharge(dist);
+        if (!bookingData?.selfDropMode) {
+            const charge = calculateDistanceCharge(distance);
             finalPrice += charge;
         }
 
         return Math.round(finalPrice);
     };
+
+    // Optimize distance calculation
+    const partnersWithDistance = useMemo(() => {
+        return partners.map(p => {
+            const distance = p.location && bookingData?.location
+                ? calculateDistance(
+                    bookingData.location.lat,
+                    bookingData.location.lng,
+                    p.location.lat,
+                    p.location.lng
+                )
+                : 99999;
+            return {
+                ...p,
+                distance
+            };
+        });
+    }, [partners, bookingData?.location]);
 
     const handlePartnerClick = async (partnerId: string) => {
         const isBusy = isPartnerBusy(partnerId);
@@ -250,6 +263,37 @@ export default function PartnerSelectionPage() {
         const partner = partners.find(p => p.uid === selectedPartner);
         if (!partner) return;
 
+        // Calculate the Final Total Price to carry forward
+        // Determine if partner is from the "Additional" section (to apply 20% mark-up)
+        // We need to reconstruct the "isFromAdditionalSection" logic here or pass it.
+        // Logic: specific implementation of sorting might make it hard to know index.
+        // Easier: Check if they are in the 'firstThreePartners' logic.
+
+        // Re-run sort to identify section
+        const sortedPartners = [...partners].sort((a, b) => {
+            const aIsBusy = unavailablePartners.includes(a.uid);
+            const bIsBusy = unavailablePartners.includes(b.uid);
+            if (aIsBusy && !bIsBusy) return 1;
+            if (!aIsBusy && bIsBusy) return -1;
+            if (!bookingData?.location) return 0;
+            const distA = a.location ? calculateDistance(bookingData.location.lat, bookingData.location.lng, a.location.lat, a.location.lng) : 99999;
+            const distB = b.location ? calculateDistance(bookingData.location.lat, bookingData.location.lng, b.location.lat, b.location.lng) : 99999;
+            return distA - distB;
+        });
+
+        const firstThreeUids = sortedPartners.slice(0, 3).map(p => p.uid);
+        const isFromAdditionalSection = !firstThreeUids.includes(partner.uid) && !unavailablePartners.includes(partner.uid);
+
+        // Get distance from optimized list
+        const dist = partnersWithDistance.find(p => p.uid === selectedPartner)?.distance || 0;
+
+        const finalTotalAmount = calculateFinalPrice(
+            bookingData.totalAmount,
+            partner.priceMultiplier || 1,
+            dist,
+            isFromAdditionalSection
+        );
+
         // Store partner data in session
         const updatedBookingData = {
             ...bookingData,
@@ -257,6 +301,7 @@ export default function PartnerSelectionPage() {
             partnerName: partner.displayName,
             partnerRating: partner.rating || 0,
             priceMultiplier: partner.priceMultiplier || 1,
+            totalAmount: finalTotalAmount, // UPDATE TOTAL AMOUNT WITH DISTANCE CHARGE
         };
 
         sessionStorage.setItem("myBookingData", JSON.stringify(updatedBookingData));
@@ -286,7 +331,8 @@ export default function PartnerSelectionPage() {
 
     // Split partners into two sections with SORTING: Active first, then Busy
     // This ensures the first 3 partners are prioritized by availability
-    const sortedPartners = [...partners].sort((a, b) => {
+    // Use partnersWithDistance which already has distance calculated
+    const sortedPartners = [...partnersWithDistance].sort((a, b) => {
         const aIsBusy = unavailablePartners.includes(a.uid);
         const bIsBusy = unavailablePartners.includes(b.uid);
 
@@ -295,12 +341,7 @@ export default function PartnerSelectionPage() {
         if (!aIsBusy && bIsBusy) return -1;
 
         // Then sort by distance (Nearest first)
-        if (!bookingData?.location) return 0;
-
-        const distA = a.location ? calculateDistance(bookingData.location.lat, bookingData.location.lng, a.location.lat, a.location.lng) : 99999;
-        const distB = b.location ? calculateDistance(bookingData.location.lat, bookingData.location.lng, b.location.lat, b.location.lng) : 99999;
-
-        return distA - distB;
+        return a.distance - b.distance;
     });
 
     // Section 1: First 3 partners (Active prioritized, then Busy)
@@ -431,14 +472,16 @@ export default function PartnerSelectionPage() {
                     ) : (
                         firstThreePartners.map((partner) => {
                             const isBusy = isPartnerBusy(partner.uid);
+                            // partner now has .distance
                             const priceIndicator = getPriceIndicator(
-                                partner.priceMultiplier,
+                                partner.distance,
                                 bookingData?.selfDropMode || false
                             );
                             const isSelected = selectedPartner === partner.uid;
                             const finalPrice = calculateFinalPrice(
                                 bookingData.totalAmount,
-                                partner,
+                                partner.priceMultiplier || 1,
+                                partner.distance,
                                 false // Not from additional section
                             );
 
@@ -472,12 +515,7 @@ export default function PartnerSelectionPage() {
                                             {partner.location && bookingData?.location && (
                                                 <div className="px-2 py-0.5 rounded-md bg-slate-100/80 backdrop-blur-sm border border-slate-200 text-[10px] font-bold text-slate-600 flex items-center gap-1 shadow-sm">
                                                     <MapPin className="w-3 h-3 text-blue-500" />
-                                                    {formatDistance(calculateDistance(
-                                                        bookingData.location.lat,
-                                                        bookingData.location.lng,
-                                                        partner.location.lat,
-                                                        partner.location.lng
-                                                    ))}
+                                                    {formatDistance(partner.distance)}
                                                 </div>
                                             )}
                                         </div>
@@ -630,14 +668,16 @@ export default function PartnerSelectionPage() {
 
                                 {additionalActivePartners.map((partner) => {
                                     const isBusy = false; // All are Active in this section
+                                    // partner now has .distance
                                     const priceIndicator = getPriceIndicator(
-                                        partner.priceMultiplier,
+                                        partner.distance,
                                         bookingData?.selfDropMode || false
                                     );
                                     const isSelected = selectedPartner === partner.uid;
                                     const finalPrice = calculateFinalPrice(
                                         bookingData.totalAmount,
-                                        partner,
+                                        partner.priceMultiplier || 1,
+                                        partner.distance,
                                         true // From additional section - higher charge
                                     );
 
@@ -758,7 +798,11 @@ export default function PartnerSelectionPage() {
                                     if (!partner) return null;
 
                                     const isBusy = isPartnerBusy(partner.uid);
-                                    const priceIndicator = getPriceIndicator(partner.priceMultiplier);
+                                    const distance = partner.location && bookingData?.location
+                                        ? calculateDistance(bookingData.location.lat, bookingData.location.lng, partner.location.lat, partner.location.lng)
+                                        : 0;
+
+                                    const priceIndicator = getPriceIndicator(distance, bookingData?.selfDropMode || false);
 
                                     return (
                                         <div className="space-y-4">
