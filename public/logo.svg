@@ -1,0 +1,13 @@
+<svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Base 'M' shape - Dark Blue -->
+    <path
+        d="M10 50 L25 50 L50 75 L75 50 L90 50 L90 85 L65 85 L50 70 L35 85 L10 85 Z"
+        fill="#1e40af"
+    />
+
+    <!-- Top Diamond - Cyan -->
+    <path
+        d="M50 15 L75 40 L50 65 L25 40 Z"
+        fill="#22d3ee"
+    />
+</svg>

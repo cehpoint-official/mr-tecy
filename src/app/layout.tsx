@@ -10,6 +10,9 @@ export const metadata: Metadata = {
   title: "Mr Tecy - On-site Intelligence Assistance",
   description: "Intelligent on-site assistance to book trusted technicians for vehicle, electrical, and mobile repairs at your doorstep.",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/logo.svg",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
